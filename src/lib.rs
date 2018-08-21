@@ -8,8 +8,9 @@ use std::path::Path;
 use std::fs::File;
 
 use regex::Regex;
+use serde_json::Value;
 
-type Context = HashMap<String, HashMap<String, String>>;
+type Context = HashMap<String, HashMap<String, Value>>;
 
 /// To build a JSONGetText instance, this struct can help you do that step by step.
 #[derive(Debug)]
@@ -33,7 +34,7 @@ impl JSONGetTextBuilder {
             return Err("The key exists.".to_string());
         }
 
-        let map: HashMap<String, String> = serde_json::from_str(json).map_err(|err| { err.to_string() })?;
+        let map: HashMap<String, Value> = serde_json::from_str(json).map_err(|err| { err.to_string() })?;
 
         self.context.insert(key.to_string(), map);
 
@@ -46,7 +47,7 @@ impl JSONGetTextBuilder {
             return Err("The key exists.".to_string());
         }
 
-        let map: HashMap<String, String> = serde_json::from_slice(json).map_err(|err| { err.to_string() })?;
+        let map: HashMap<String, Value> = serde_json::from_slice(json).map_err(|err| { err.to_string() })?;
 
         self.context.insert(key.to_string(), map);
 
@@ -61,7 +62,7 @@ impl JSONGetTextBuilder {
 
         let file = File::open(path).map_err(|err| { err.to_string() })?;
 
-        let map: HashMap<String, String> = serde_json::from_reader(&file).map_err(|err| { err.to_string() })?;
+        let map: HashMap<String, Value> = serde_json::from_reader(&file).map_err(|err| { err.to_string() })?;
 
         self.context.insert(key.to_string(), map);
 
@@ -69,7 +70,7 @@ impl JSONGetTextBuilder {
     }
 
     /// Add a map to the context.
-    pub fn add_map_to_context<P: AsRef<Path>>(&mut self, key: &str, map: HashMap<String, String>) -> Result<&Self, String> {
+    pub fn add_map_to_context<P: AsRef<Path>>(&mut self, key: &str, map: HashMap<String, Value>) -> Result<&Self, String> {
         if self.context.contains_key(key) {
             return Err("The key exists.".to_string());
         }
@@ -161,7 +162,7 @@ impl JSONGetText {
     }
 
     /// Get a string map from context by a key.
-    pub fn get(&self, key: &str) -> &HashMap<String, String> {
+    pub fn get(&self, key: &str) -> &HashMap<String, Value> {
         match self.context.get(key) {
             Some(m) => m,
             None => self.context.get(&self.default_key).unwrap()
@@ -169,32 +170,32 @@ impl JSONGetText {
     }
 
     /// Get text from context.
-    pub fn get_text(&self, text: &str) -> Option<&str> {
+    pub fn get_text(&self, text: &str) -> Option<&Value> {
         let map = self.context.get(&self.default_key).unwrap();
 
-        map.get(text).map(|s| s.as_str())
+        map.get(text).map(|s| s)
     }
 
     /// Get text from context with a specific key.
-    pub fn get_text_with_key(&self, key: &str, text: &str) -> Option<&str> {
+    pub fn get_text_with_key(&self, key: &str, text: &str) -> Option<&Value> {
         let map = match self.context.get(key) {
             Some(m) => m,
             None => self.context.get(&self.default_key).unwrap()
         };
 
-        map.get(text).map(|s| s.as_str())
+        map.get(text).map(|s| s)
     }
 
     /// Get multiple text from context. The output map is usually used for serialization.
     #[cfg(feature = "nightly")]
-    pub fn get_multiple_text(&self, text_array: &[&str]) -> Option<HashMap<&str, &str>> {
+    pub fn get_multiple_text(&self, text_array: &[&str]) -> Option<HashMap<&str, &Value>> {
         let map = self.context.get(&self.default_key).unwrap();
 
         let mut new_map = HashMap::new();
 
         for &text in text_array.iter() {
             let (key, value) = map.get_key_value(text)?;
-            new_map.insert(key.as_str(), value.as_str());
+            new_map.insert(key.as_str(), value);
         }
 
         Some(new_map)
@@ -202,7 +203,7 @@ impl JSONGetText {
 
     /// Get multiple text from context with a specific key. The output map is usually used for serialization.
     #[cfg(feature = "nightly")]
-    pub fn get_multiple_text_with_key(&self, key: &str, text_array: &[&str]) -> Option<HashMap<&str, &str>> {
+    pub fn get_multiple_text_with_key(&self, key: &str, text_array: &[&str]) -> Option<HashMap<&str, &Value>> {
         let map = match self.context.get(key) {
             Some(m) => m,
             None => self.context.get(&self.default_key).unwrap()
@@ -212,14 +213,14 @@ impl JSONGetText {
 
         for &text in text_array.iter() {
             let (key, value) = map.get_key_value(text)?;
-            new_map.insert(key.as_str(), value.as_str());
+            new_map.insert(key.as_str(), value);
         }
 
         Some(new_map)
     }
 
     /// Get filtered text from context by a Regex instance. The output map is usually used for serialization.
-    pub fn get_filtered_text(&self, regex: &Regex) -> Option<HashMap<&str, &str>> {
+    pub fn get_filtered_text(&self, regex: &Regex) -> Option<HashMap<&str, &Value>> {
         let map = self.context.get(&self.default_key).unwrap();
 
         let mut new_map = HashMap::new();
@@ -228,14 +229,14 @@ impl JSONGetText {
             if !regex.is_match(key) {
                 continue;
             }
-            new_map.insert(key.as_str(), value.as_str());
+            new_map.insert(key.as_str(), value);
         }
 
         Some(new_map)
     }
 
     /// Get filtered text from context with a specific key by a Regex instance. The output map is usually used for serialization.
-    pub fn get_filtered_text_with_key(&self, key: &str, regex: &Regex) -> Option<HashMap<&str, &str>> {
+    pub fn get_filtered_text_with_key(&self, key: &str, regex: &Regex) -> Option<HashMap<&str, &Value>> {
         let map = match self.context.get(key) {
             Some(m) => m,
             None => self.context.get(&self.default_key).unwrap()
@@ -247,7 +248,7 @@ impl JSONGetText {
             if !regex.is_match(key) {
                 continue;
             }
-            new_map.insert(key.as_str(), value.as_str());
+            new_map.insert(key.as_str(), value);
         }
 
         Some(new_map)
