@@ -152,10 +152,10 @@ impl JSONGetText {
     }
 
     /// Get a string map from context by a key.
-    pub fn get(&self, key: &str) -> Option<&HashMap<String, String>> {
+    pub fn get(&self, key: &str) -> &HashMap<String, String> {
         match self.context.get(key) {
-            Some(m) => Some(m),
-            None => self.context.get(&self.default_key).map(|m| Some(m)).unwrap()
+            Some(m) => m,
+            None => self.context.get(&self.default_key).unwrap()
         }
     }
 

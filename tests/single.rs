@@ -23,17 +23,17 @@ fn map_get() {
             "zh_TW", "langs/zh_TW.json"
         ).unwrap();
 
-    let map = ctx.get("en_US").unwrap();
+    let map = ctx.get("en_US");
 
     assert_eq!("Hello, world!", map.get("hello").unwrap());
     assert_eq!("Rust!", map.get("rust").unwrap());
 
-    let map = ctx.get("de").unwrap();
+    let map = ctx.get("de");
 
     assert_eq!("Hello, world!", map.get("hello").unwrap());
     assert_eq!("Rust!", map.get("rust").unwrap());
 
-    let map = ctx.get("zh_TW").unwrap();
+    let map = ctx.get("zh_TW");
 
     assert_eq!("哈囉，世界！", map.get("hello").unwrap());
     assert_eq!("Rust!", map.get("rust").unwrap());
