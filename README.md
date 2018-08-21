@@ -12,7 +12,7 @@ This is a library for getting text from JSON usually for internationalization.
 #[macro_use]
 extern crate json_gettext;
 
-let ctx = static_json_get_text_build!("en_US", 
+let ctx = static_json_gettext_build!("en_US", 
             "en_US", "langs/en_US.json",
             "zh_TW", "langs/zh_TW.json"
         ).unwrap();

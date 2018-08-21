@@ -193,7 +193,7 @@ impl JSONGetText {
 /// ```
 /// #[macro_use] extern crate json_gettext;
 ///
-/// let ctx = static_json_get_text_build!("en_US",
+/// let ctx = static_json_gettext_build!("en_US",
 ///            "en_US", "langs/en_US.json",
 ///            "zh_TW", "langs/zh_TW.json"
 ///        ).unwrap();
@@ -201,7 +201,7 @@ impl JSONGetText {
 /// println!("{:?}", ctx);
 /// ```
 #[macro_export]
-macro_rules! static_json_get_text_build {
+macro_rules! static_json_gettext_build {
     ( $default_key:expr, $($key:expr, $path:expr), * ) => {
         {
             use self::json_gettext::JSONGetText;
@@ -226,7 +226,7 @@ macro_rules! static_json_get_text_build {
 /// ```
 /// #[macro_use] extern crate json_gettext;
 ///
-/// let ctx = static_json_get_text_build!("en_US",
+/// let ctx = static_json_gettext_build!("en_US",
 ///            "en_US", "langs/en_US.json",
 ///            "zh_TW", "langs/zh_TW.json"
 ///        ).unwrap();

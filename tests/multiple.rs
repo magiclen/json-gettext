@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 #[test]
 fn mutiple_get() {
-    let ctx = static_json_get_text_build!("en_US",
+    let ctx = static_json_gettext_build!("en_US",
             "en_US", "langs/en_US.json",
             "zh_TW", "langs/zh_TW.json"
         ).unwrap();
