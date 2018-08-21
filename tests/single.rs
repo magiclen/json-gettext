@@ -10,6 +10,7 @@ fn single_get() {
 
     assert_eq!("Hello, world!", get_text!(ctx, "hello").unwrap());
     assert_eq!("Hello, world!", get_text!(ctx, "en_US", "hello").unwrap());
+    assert_eq!("Hello, world!", get_text!(ctx, "de", "hello").unwrap());
     assert_eq!("Rust!", get_text!(ctx, "en_US", "rust").unwrap());
     assert_eq!("哈囉，世界！", get_text!(ctx, "zh_TW", "hello").unwrap());
     assert_eq!("Rust!", get_text!(ctx, "zh_TW", "rust").unwrap());

@@ -17,6 +17,11 @@ fn mutiple_get() {
     assert_eq!(&"Hello, world!", map_en.get("hello").unwrap());
     assert_eq!(&"Rust!", map_en.get("rust").unwrap());
 
+    let map_de: HashMap<&str, &str> = get_text!(ctx, "de", "hello", "rust").unwrap();
+
+    assert_eq!(&"Hello, world!", map_de.get("hello").unwrap());
+    assert_eq!(&"Rust!", map_de.get("rust").unwrap());
+
     let map_zh: HashMap<&str, &str> = get_text!(ctx, "zh_TW", "hello", "rust").unwrap();
 
     assert_eq!(&"哈囉，世界！", map_zh.get("hello").unwrap());

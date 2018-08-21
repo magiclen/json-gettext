@@ -158,24 +158,43 @@ impl JSONGetText {
 
     /// Get text from context.
     pub fn get_text(&self, text: &str) -> Option<&str> {
-        self.get_text_with_key(&self.default_key, text)
+        let map = self.context.get(&self.default_key).unwrap();
+
+        map.get(text).map(|s| s.as_str())
     }
 
     /// Get text from context with a specific key.
     pub fn get_text_with_key(&self, key: &str, text: &str) -> Option<&str> {
-        self.context.get(key)?.get(text).map(|s| s.as_str())
+        let map = match self.context.get(key) {
+            Some(m) => m,
+            None => self.context.get(&self.default_key).unwrap()
+        };
+
+        map.get(text).map(|s| s.as_str())
     }
 
     /// Get multiple text from context. The output map is usually used for serialization.
     #[cfg(feature = "nightly")]
     pub fn get_multiple_text(&self, text_array: &[&str]) -> Option<HashMap<&str, &str>> {
-        self.get_multiple_text_with_key(&self.default_key, text_array)
+        let map = self.context.get(&self.default_key).unwrap();
+
+        let mut new_map = HashMap::new();
+
+        for &text in text_array.iter() {
+            let (key, value) = map.get_key_value(text)?;
+            new_map.insert(key.as_str(), value.as_str());
+        }
+
+        Some(new_map)
     }
 
     /// Get multiple text from context with a specific key. The output map is usually used for serialization.
     #[cfg(feature = "nightly")]
     pub fn get_multiple_text_with_key(&self, key: &str, text_array: &[&str]) -> Option<HashMap<&str, &str>> {
-        let map = self.context.get(key)?;
+        let map = match self.context.get(key) {
+            Some(m) => m,
+            None => self.context.get(&self.default_key).unwrap()
+        };
 
         let mut new_map = HashMap::new();
 
