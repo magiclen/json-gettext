@@ -1,10 +1,13 @@
 #![cfg_attr(feature = "nightly", feature(map_get_key_value))]
 
 extern crate serde_json;
+extern crate regex;
 
-use std::collections::{HashMap, hash_map::Keys};
+use std::collections::HashMap;
 use std::path::Path;
 use std::fs::File;
+
+use regex::Regex;
 
 type Context = HashMap<String, HashMap<String, String>>;
 
@@ -142,8 +145,14 @@ impl JSONGetText {
     }
 
     /// Get all keys in context.
-    pub fn get_keys(&self) -> Keys<String, HashMap<String, String>> {
-        self.context.keys()
+    pub fn get_keys(&self) -> Vec<&str> {
+        let mut vec = Vec::new();
+
+        for key in self.context.keys() {
+            vec.push(key.as_str());
+        }
+
+        vec
     }
 
     /// Get the default key.
@@ -203,6 +212,41 @@ impl JSONGetText {
 
         for &text in text_array.iter() {
             let (key, value) = map.get_key_value(text)?;
+            new_map.insert(key.as_str(), value.as_str());
+        }
+
+        Some(new_map)
+    }
+
+    /// Get filtered text from context by a Regex instance. The output map is usually used for serialization.
+    pub fn get_filtered_text(&self, regex: &Regex) -> Option<HashMap<&str, &str>> {
+        let map = self.context.get(&self.default_key).unwrap();
+
+        let mut new_map = HashMap::new();
+
+        for (key, value) in map.iter() {
+            if !regex.is_match(key) {
+                continue;
+            }
+            new_map.insert(key.as_str(), value.as_str());
+        }
+
+        Some(new_map)
+    }
+
+    /// Get filtered text from context with a specific key by a Regex instance. The output map is usually used for serialization.
+    pub fn get_filtered_text_with_key(&self, key: &str, regex: &Regex) -> Option<HashMap<&str, &str>> {
+        let map = match self.context.get(key) {
+            Some(m) => m,
+            None => self.context.get(&self.default_key).unwrap()
+        };
+
+        let mut new_map = HashMap::new();
+
+        for (key, value) in map.iter() {
+            if !regex.is_match(key) {
+                continue;
+            }
             new_map.insert(key.as_str(), value.as_str());
         }
 
