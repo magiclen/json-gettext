@@ -82,7 +82,7 @@ impl JSONGetTextBuilder {
     }
 }
 
-/// A wrapper for context and a default key. **Keys** usually be considered as locales.
+/// A wrapper for context and a default key. **Keys** are usually considered as locales.
 #[derive(Debug)]
 pub struct JSONGetText {
     default_key: String,
