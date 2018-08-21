@@ -15,3 +15,26 @@ fn single_get() {
     assert_eq!("哈囉，世界！", get_text!(ctx, "zh_TW", "hello").unwrap());
     assert_eq!("Rust!", get_text!(ctx, "zh_TW", "rust").unwrap());
 }
+
+#[test]
+fn map_get() {
+    let ctx = static_json_gettext_build!("en_US",
+            "en_US", "langs/en_US.json",
+            "zh_TW", "langs/zh_TW.json"
+        ).unwrap();
+
+    let map = ctx.get("en_US").unwrap();
+
+    assert_eq!("Hello, world!", map.get("hello").unwrap());
+    assert_eq!("Rust!", map.get("rust").unwrap());
+
+    let map = ctx.get("de").unwrap();
+
+    assert_eq!("Hello, world!", map.get("hello").unwrap());
+    assert_eq!("Rust!", map.get("rust").unwrap());
+
+    let map = ctx.get("zh_TW").unwrap();
+
+    assert_eq!("哈囉，世界！", map.get("hello").unwrap());
+    assert_eq!("Rust!", map.get("rust").unwrap());
+}
