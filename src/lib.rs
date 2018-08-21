@@ -166,13 +166,13 @@ impl JSONGetText {
         self.context.get(key)?.get(text).map(|s| s.as_str())
     }
 
-    /// Get multiple text from context. The output map is usually be used for serialization.
+    /// Get multiple text from context. The output map is usually used for serialization.
     #[cfg(feature = "nightly")]
     pub fn get_multiple_text(&self, text_array: &[&str]) -> Option<HashMap<&str, &str>> {
         self.get_multiple_text_with_key(&self.default_key, text_array)
     }
 
-    /// Get multiple text from context with a specific key. The output map is usually be used for serialization.
+    /// Get multiple text from context with a specific key. The output map is usually used for serialization.
     #[cfg(feature = "nightly")]
     pub fn get_multiple_text_with_key(&self, key: &str, text_array: &[&str]) -> Option<HashMap<&str, &str>> {
         let map = self.context.get(key)?;
