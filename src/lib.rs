@@ -7,6 +7,7 @@ extern crate regex;
 use std::collections::HashMap;
 use std::path::Path;
 use std::fs::File;
+use std::fmt::{self, Display, Formatter};
 
 use regex::Regex;
 
@@ -86,20 +87,30 @@ impl<'a> PartialEq<Value<'a>> for str {
     }
 }
 
-impl<'a> ToString for Value<'a> {
-    fn to_string(&self) -> String {
+impl<'a> PartialEq<Value<'a>> for &'a str {
+    fn eq(&self, other: &Value) -> bool {
+        match other {
+            Value::Str(s) => s.eq(self),
+            Value::JSONValue(v) => v.eq(self),
+            Value::JSONValueRef(v) => v.eq(self)
+        }
+    }
+}
+
+impl<'a> Display for Value<'a> {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Value::Str(s) => s.to_string(),
+            Value::Str(s) => s.fmt(f),
             Value::JSONValue(v) => {
                 match v.as_str() {
-                    Some(s) => s.to_string(),
-                    None => v.to_string()
+                    Some(s) => s.fmt(f),
+                    None => v.fmt(f)
                 }
             }
             Value::JSONValueRef(v) => {
                 match v.as_str() {
-                    Some(s) => s.to_string(),
-                    None => v.to_string()
+                    Some(s) => s.fmt(f),
+                    None => v.fmt(f)
                 }
             }
         }
