@@ -8,18 +8,92 @@ use std::path::Path;
 use std::fs::File;
 
 use regex::Regex;
-use serde_json::Value;
 
-type Context = HashMap<String, HashMap<String, Value>>;
+type Context<'a> = HashMap<String, HashMap<String, Value<'a>>>;
 
 /// To build a JSONGetText instance, this struct can help you do that step by step.
 #[derive(Debug)]
-pub struct JSONGetTextBuilder {
+pub struct JSONGetTextBuilder<'a> {
     default_key: String,
-    context: Context,
+    context: Context<'a>,
 }
 
-impl JSONGetTextBuilder {
+#[derive(Debug, Clone, PartialEq)]
+pub enum Value<'a> {
+    Str(&'a str),
+    JSONValue(serde_json::Value),
+    JSONValueRef(&'a serde_json::Value),
+}
+
+impl<'a> Value<'a> {
+    pub fn from_str(s: &'a str) -> Value<'a> {
+        Value::Str(s)
+    }
+
+    pub fn from_string(s: String) -> Value<'a> {
+        Value::JSONValue(serde_json::Value::String(s))
+    }
+
+    pub fn from_bool(b: bool) -> Value<'a> {
+        Value::JSONValue(serde_json::Value::Bool(b))
+    }
+
+    pub fn from_i64(n: i64) -> Value<'a> {
+        Value::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::I64(n))))
+    }
+
+    pub fn from_u64(n: u64) -> Value<'a> {
+        Value::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::U64(n))))
+    }
+
+    pub fn from_f64(n: f64) -> Value<'a> {
+        Value::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::F64(n))))
+    }
+
+    pub fn from_json_value(v: serde_json::Value) -> Value<'a> {
+        Value::JSONValue(v)
+    }
+
+    pub fn from_json_value_ref(v: &'a serde_json::Value) -> Value<'a> {
+        Value::JSONValueRef(v)
+    }
+
+    pub fn null() -> Value<'a> {
+        Value::JSONValue(serde_json::Value::Null)
+    }
+}
+
+impl<'a> PartialEq<Value<'a>> for str {
+    fn eq(&self, other: &Value) -> bool {
+        match other {
+            Value::Str(s) => s.eq(&self),
+            Value::JSONValue(v) => v.eq(self),
+            Value::JSONValueRef(v) => v.eq(&self)
+        }
+    }
+}
+
+impl<'a> ToString for Value<'a> {
+    fn to_string(&self) -> String {
+        match self {
+            Value::Str(s) => s.to_string(),
+            Value::JSONValue(v) => {
+                match v.as_str() {
+                    Some(s) => s.to_string(),
+                    None => v.to_string()
+                }
+            }
+            Value::JSONValueRef(v) => {
+                match v.as_str() {
+                    Some(s) => s.to_string(),
+                    None => v.to_string()
+                }
+            }
+        }
+    }
+}
+
+impl<'a> JSONGetTextBuilder<'a> {
     /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
     pub fn new(default_key: &str) -> JSONGetTextBuilder {
         JSONGetTextBuilder {
@@ -34,7 +108,13 @@ impl JSONGetTextBuilder {
             return Err("The key exists.".to_string());
         }
 
-        let map: HashMap<String, Value> = serde_json::from_str(json).map_err(|err| { err.to_string() })?;
+        let data: HashMap<String, serde_json::Value> = serde_json::from_str(json).map_err(|err| { err.to_string() })?;
+
+        let mut map = HashMap::new();
+
+        for (k, v) in data {
+            map.insert(k, Value::JSONValue(v));
+        }
 
         self.context.insert(key.to_string(), map);
 
@@ -47,7 +127,13 @@ impl JSONGetTextBuilder {
             return Err("The key exists.".to_string());
         }
 
-        let map: HashMap<String, Value> = serde_json::from_slice(json).map_err(|err| { err.to_string() })?;
+        let data: HashMap<String, serde_json::Value> = serde_json::from_slice(json).map_err(|err| { err.to_string() })?;
+
+        let mut map = HashMap::new();
+
+        for (k, v) in data {
+            map.insert(k, Value::JSONValue(v));
+        }
 
         self.context.insert(key.to_string(), map);
 
@@ -62,7 +148,13 @@ impl JSONGetTextBuilder {
 
         let file = File::open(path).map_err(|err| { err.to_string() })?;
 
-        let map: HashMap<String, Value> = serde_json::from_reader(&file).map_err(|err| { err.to_string() })?;
+        let data: HashMap<String, serde_json::Value> = serde_json::from_reader(&file).map_err(|err| { err.to_string() })?;
+
+        let mut map = HashMap::new();
+
+        for (k, v) in data {
+            map.insert(k, Value::JSONValue(v));
+        }
 
         self.context.insert(key.to_string(), map);
 
@@ -70,7 +162,7 @@ impl JSONGetTextBuilder {
     }
 
     /// Add a map to the context.
-    pub fn add_map_to_context<P: AsRef<Path>>(&mut self, key: &str, map: HashMap<String, Value>) -> Result<&Self, String> {
+    pub fn add_map_to_context<P: AsRef<Path>>(&mut self, key: &str, map: HashMap<String, Value<'a>>) -> Result<&Self, String> {
         if self.context.contains_key(key) {
             return Err("The key exists.".to_string());
         }
@@ -81,30 +173,30 @@ impl JSONGetTextBuilder {
     }
 
     /// Build a JSONGetText instance.
-    pub fn build(self) -> Result<JSONGetText, String> {
+    pub fn build(self) -> Result<JSONGetText<'a>, String> {
         JSONGetText::from_context_inner(self.default_key, self.context)
     }
 }
 
 /// A wrapper for context and a default key. **Keys** are usually considered as locales.
 #[derive(Debug)]
-pub struct JSONGetText {
+pub struct JSONGetText<'a> {
     default_key: String,
-    context: Context,
+    context: Context<'a>,
 }
 
-impl JSONGetText {
+impl<'a> JSONGetText<'a> {
     /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
     pub fn build(default_key: &str) -> JSONGetTextBuilder {
         JSONGetTextBuilder::new(default_key)
     }
 
     /// Create a new JSONGetText instance with context and a default key.
-    pub fn from_context(default_key: &str, context: Context) -> Result<JSONGetText, String> {
+    pub fn from_context(default_key: &str, context: Context<'a>) -> Result<JSONGetText<'a>, String> {
         JSONGetText::from_context_inner(default_key.to_string(), context)
     }
 
-    fn from_context_inner(default_key: String, mut context: Context) -> Result<JSONGetText, String> {
+    fn from_context_inner(default_key: String, mut context: Context<'a>) -> Result<JSONGetText<'a>, String> {
         if !context.contains_key(&default_key) {
             return Err("Cannot find the default key in the context.".to_string());
         }
@@ -113,35 +205,37 @@ impl JSONGetText {
             return Err("Context should contain the default key.".to_string());
         }
 
+        let default_map = context.remove(&default_key).unwrap();
+
+        let mut inner_context = HashMap::new();
+
         {
-            let default_map = context.remove(&default_key).unwrap();
-
-            for (key, map) in context.iter_mut() {
+            for (key, mut map) in context {
                 {
-                    let map_keys = map.keys();
-
-                    for map_key in map_keys {
+                    for map_key in map.keys() {
                         if !default_map.contains_key(map_key) {
                             return Err(format! {"The text `{}` in the key `{}` is not in the map of the default key.", map_key, key});
                         }
                     }
                 }
 
-                let map_keys = default_map.keys();
-
-                for map_key in map_keys {
-                    if !map.contains_key(map_key) {
-                        map.insert(map_key.clone(), default_map.get(map_key).unwrap().clone());
+                {
+                    for map_key in default_map.keys() {
+                        if !map.contains_key(map_key) {
+                            map.insert(map_key.clone(), default_map.get(map_key).unwrap().clone());
+                        }
                     }
                 }
+
+                inner_context.insert(key.clone(), map);
             }
 
-            context.insert(default_key.clone(), default_map);
+            inner_context.insert(default_key.clone(), default_map);
         }
 
         Ok(JSONGetText {
             default_key: default_key,
-            context,
+            context: inner_context,
         })
     }
 

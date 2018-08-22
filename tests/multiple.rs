@@ -7,7 +7,7 @@ extern crate serde_json;
 
 use std::collections::HashMap;
 
-use serde_json::Value;
+use json_gettext::Value;
 
 #[test]
 fn mutiple_get() {
