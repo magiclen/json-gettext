@@ -1,5 +1,6 @@
 #![cfg_attr(feature = "nightly", feature(map_get_key_value))]
 
+extern crate serde;
 extern crate serde_json;
 extern crate regex;
 
@@ -60,6 +61,18 @@ impl<'a> Value<'a> {
 
     pub fn null() -> Value<'a> {
         Value::JSONValue(serde_json::Value::Null)
+    }
+}
+
+impl<'a> serde::ser::Serialize for Value<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer {
+        match self {
+            Value::Str(s) => s.serialize(serializer),
+            Value::JSONValue(v) => v.serialize(serializer),
+            Value::JSONValueRef(v) => v.serialize(serializer)
+        }
     }
 }
 
