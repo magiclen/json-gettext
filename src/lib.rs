@@ -288,32 +288,41 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Get text from context.
-    pub fn get_text(&self, text: &str) -> Option<&Value> {
+    pub fn get_text(&self, text: &str) -> Option<Value> {
         let map = self.context.get(&self.default_key).unwrap();
 
-        map.get(text).map(|s| s)
+        map.get(text).map(|s| match s {
+            Value::JSONValue(v) => Value::JSONValueRef(v),
+            _ => Value::Str("")
+        })
     }
 
     /// Get text from context with a specific key.
-    pub fn get_text_with_key(&self, key: &str, text: &str) -> Option<&Value> {
+    pub fn get_text_with_key(&self, key: &str, text: &str) -> Option<Value> {
         let map = match self.context.get(key) {
             Some(m) => m,
             None => self.context.get(&self.default_key).unwrap()
         };
 
-        map.get(text).map(|s| s)
+        map.get(text).map(|s| match s {
+            Value::JSONValue(v) => Value::JSONValueRef(v),
+            _ => Value::Str("")
+        })
     }
 
     /// Get multiple text from context. The output map is usually used for serialization.
     #[cfg(feature = "nightly")]
-    pub fn get_multiple_text(&self, text_array: &[&str]) -> Option<HashMap<&str, &Value>> {
+    pub fn get_multiple_text(&self, text_array: &[&str]) -> Option<HashMap<&str, Value>> {
         let map = self.context.get(&self.default_key).unwrap();
 
         let mut new_map = HashMap::new();
 
         for &text in text_array.iter() {
             let (key, value) = map.get_key_value(text)?;
-            new_map.insert(key.as_str(), value);
+            new_map.insert(key.as_str(), Value::JSONValueRef(match value {
+                Value::JSONValue(v) => v,
+                _ => return None
+            }));
         }
 
         Some(new_map)
@@ -321,7 +330,7 @@ impl<'a> JSONGetText<'a> {
 
     /// Get multiple text from context with a specific key. The output map is usually used for serialization.
     #[cfg(feature = "nightly")]
-    pub fn get_multiple_text_with_key(&self, key: &str, text_array: &[&str]) -> Option<HashMap<&str, &Value>> {
+    pub fn get_multiple_text_with_key(&self, key: &str, text_array: &[&str]) -> Option<HashMap<&str, Value>> {
         let map = match self.context.get(key) {
             Some(m) => m,
             None => self.context.get(&self.default_key).unwrap()
@@ -331,14 +340,17 @@ impl<'a> JSONGetText<'a> {
 
         for &text in text_array.iter() {
             let (key, value) = map.get_key_value(text)?;
-            new_map.insert(key.as_str(), value);
+            new_map.insert(key.as_str(), Value::JSONValueRef(match value {
+                Value::JSONValue(v) => v,
+                _ => return None
+            }));
         }
 
         Some(new_map)
     }
 
     /// Get filtered text from context by a Regex instance. The output map is usually used for serialization.
-    pub fn get_filtered_text(&self, regex: &Regex) -> Option<HashMap<&str, &Value>> {
+    pub fn get_filtered_text(&self, regex: &Regex) -> Option<HashMap<&str, Value>> {
         let map = self.context.get(&self.default_key).unwrap();
 
         let mut new_map = HashMap::new();
@@ -347,14 +359,17 @@ impl<'a> JSONGetText<'a> {
             if !regex.is_match(key) {
                 continue;
             }
-            new_map.insert(key.as_str(), value);
+            new_map.insert(key.as_str(), Value::JSONValueRef(match value {
+                Value::JSONValue(v) => v,
+                _ => return None
+            }));
         }
 
         Some(new_map)
     }
 
     /// Get filtered text from context with a specific key by a Regex instance. The output map is usually used for serialization.
-    pub fn get_filtered_text_with_key(&self, key: &str, regex: &Regex) -> Option<HashMap<&str, &Value>> {
+    pub fn get_filtered_text_with_key(&self, key: &str, regex: &Regex) -> Option<HashMap<&str, Value>> {
         let map = match self.context.get(key) {
             Some(m) => m,
             None => self.context.get(&self.default_key).unwrap()
@@ -366,7 +381,10 @@ impl<'a> JSONGetText<'a> {
             if !regex.is_match(key) {
                 continue;
             }
-            new_map.insert(key.as_str(), value);
+            new_map.insert(key.as_str(), Value::JSONValueRef(match value {
+                Value::JSONValue(v) => v,
+                _ => return None
+            }));
         }
 
         Some(new_map)
