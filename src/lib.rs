@@ -63,6 +63,36 @@ impl<'a> Value<'a> {
     pub fn null() -> Value<'a> {
         Value::JSONValue(serde_json::Value::Null)
     }
+
+    pub fn to_json(&self) -> String {
+        match self {
+            Value::Str(s) => {
+                let mut string = String::with_capacity(s.len() + 2);
+                string.push('"');
+                let mut from = 0;
+                for (i, c) in s.char_indices() {
+                    let esc = c.escape_debug();
+                    if esc.len() != 1 {
+                        string.push_str(&s[from..i]);
+                        for c in esc {
+                            string.push(c);
+                        }
+                        from = i + c.len_utf8();
+                    }
+                }
+                string.push_str(&s[from..]);
+                string.push('"');
+
+                string
+            }
+            Value::JSONValue(v) => {
+                v.to_string()
+            }
+            Value::JSONValueRef(v) => {
+                v.to_string()
+            }
+        }
+    }
 }
 
 impl<'a> serde::ser::Serialize for Value<'a> {
