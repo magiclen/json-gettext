@@ -64,6 +64,7 @@ impl<'a> Value<'a> {
         Value::JSONValue(serde_json::Value::Null)
     }
 
+    /// Convert to a string for JSON format.
     pub fn to_json(&self) -> String {
         match self {
             Value::Str(s) => {
