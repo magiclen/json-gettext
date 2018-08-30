@@ -1,7 +1,7 @@
 #![cfg_attr(feature = "nightly", feature(map_get_key_value))]
 
 extern crate serde;
-extern crate serde_json;
+pub extern crate serde_json;
 extern crate regex;
 
 use std::collections::HashMap;
