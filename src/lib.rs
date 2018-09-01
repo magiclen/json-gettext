@@ -438,7 +438,7 @@ impl<'a> JSONGetText<'a> {
 macro_rules! static_json_gettext_build {
     ( $default_key:expr, $($key:expr, $path:expr), * ) => {
         {
-            use self::json_gettext::JSONGetText;
+            use ::json_gettext::JSONGetText;
 
             let mut builder = JSONGetText::build($default_key);
 
