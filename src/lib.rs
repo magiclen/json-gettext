@@ -444,7 +444,7 @@ macro_rules! static_json_gettext_build {
 
             let mut builder = JSONGetText::build($default_key);
 
-            lazy_static_include_bytes!(DATA $(, $path)* );
+            lazy_static_include_bytes_vec!(DATA $(, $path)* );
 
             let mut p = 0usize;
 
