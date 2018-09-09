@@ -21,6 +21,8 @@ assert_eq!("Hello, world!", get_text!(ctx, "hello").unwrap());
 assert_eq!("哈囉，世界！", get_text!(ctx, "zh_TW", "hello").unwrap());
 ```
 
+In order to reduce the compilation time, the `static_json_gettext_build` macro has files compiled into your executable binary file together, only when you are using the **release** profile.
+
 ## Crates.io
 
 https://crates.io/crates/json-gettext

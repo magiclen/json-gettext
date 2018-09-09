@@ -425,6 +425,8 @@ impl<'a> JSONGetText<'a> {
 /// Used for including json files into your executable binary file for building a JSONGetText instance.
 ///
 /// ```
+/// #[macro_use] extern crate lazy_static_include;
+/// #[macro_use] extern crate lazy_static;
 /// #[macro_use] extern crate json_gettext;
 ///
 /// let ctx = static_json_gettext_build!("en_US",
@@ -442,9 +444,15 @@ macro_rules! static_json_gettext_build {
 
             let mut builder = JSONGetText::build($default_key);
 
+            lazy_static_include_bytes!(DATA $(, $path)* );
+
+            let mut p = 0usize;
+
             $(
                 {
-                    let data = include_bytes!(concat!(env!("CARGO_MANIFEST_DIR"), "/", $path));
+                    let data = DATA[p];
+
+                    p += 1;
 
                     builder.add_json_bytes_to_context($key, data).unwrap();
                 }
@@ -458,6 +466,8 @@ macro_rules! static_json_gettext_build {
 /// Used for getting single or multiple text from context.
 ///
 /// ```
+/// #[macro_use] extern crate lazy_static_include;
+/// #[macro_use] extern crate lazy_static;
 /// #[macro_use] extern crate json_gettext;
 ///
 /// let ctx = static_json_gettext_build!("en_US",
