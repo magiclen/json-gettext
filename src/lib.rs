@@ -94,6 +94,27 @@ impl<'a> Value<'a> {
             }
         }
     }
+
+    /// Convert to a string slice if it is possible (if it is a string).
+    pub fn as_str(&self) -> Option<&str> {
+        match self {
+            Value::Str(s) => {
+                Some(s)
+            }
+            Value::JSONValue(v) => {
+                match v {
+                    serde_json::Value::String(s) => Some(&s),
+                    _ => None
+                }
+            }
+            Value::JSONValueRef(v) => {
+                match v {
+                    serde_json::Value::String(s) => Some(&s),
+                    _ => None
+                }
+            }
+        }
+    }
 }
 
 impl<'a> serde::ser::Serialize for Value<'a> {
