@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use json_gettext::JSONGetTextValue;
 
 #[test]
-fn mutiple_get() {
+fn multiple_get() {
     let ctx = static_json_gettext_build!("en_US",
             "en_US", "langs/en_US.json",
             "zh_TW", "langs/zh_TW.json"
