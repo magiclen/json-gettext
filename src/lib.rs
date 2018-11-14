@@ -1,195 +1,93 @@
-#![cfg_attr(feature = "nightly", feature(map_get_key_value))]
+/*!
+# JSON GetText
 
-extern crate serde;
+This is a library for getting text from JSON usually for internationalization.
+
+## Example
+
+```rust
+#[macro_use] extern crate json_gettext;
+#[macro_use] extern crate lazy_static;
+#[macro_use] extern crate lazy_static_include;
+
+let ctx = static_json_gettext_build!(
+            "en_US",
+            "en_US", "langs/en_US.json",
+            "zh_TW", "langs/zh_TW.json"
+        ).unwrap();
+
+assert_eq!("Hello, world!", get_text!(ctx, "hello").unwrap());
+assert_eq!("哈囉，世界！", get_text!(ctx, "zh_TW", "hello").unwrap());
+```
+
+In order to reduce the compilation time, the `static_json_gettext_build` macro has files compiled into your executable binary file together, only when you are using the **release** profile.
+*/
+
 pub extern crate serde_json;
+extern crate serde;
 extern crate regex;
+
+mod json_gettext_value;
+
+pub use json_gettext_value::JSONGetTextValue;
 
 use std::collections::HashMap;
 use std::path::Path;
 use std::fs::File;
-use std::fmt::{self, Display, Formatter};
+use std::io;
 
 use regex::Regex;
+pub use serde_json::Value;
 
-type Context<'a> = HashMap<String, HashMap<String, Value<'a>>>;
+type Context<'a> = HashMap<String, HashMap<String, JSONGetTextValue<'a>>>;
 
 /// To build a JSONGetText instance, this struct can help you do that step by step.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct JSONGetTextBuilder<'a> {
     default_key: String,
     context: Context<'a>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Value<'a> {
-    Str(&'a str),
-    JSONValue(serde_json::Value),
-    JSONValueRef(&'a serde_json::Value),
+#[derive(Debug)]
+pub enum JSONGetTextBuilderError {
+    KeyRepeat(String),
+    IOError(io::Error),
+    SerdeError(serde_json::Error),
 }
 
-impl<'a> Value<'a> {
-    pub fn from_str(s: &'a str) -> Value<'a> {
-        Value::Str(s)
-    }
-
-    pub fn from_string(s: String) -> Value<'a> {
-        Value::JSONValue(serde_json::Value::String(s))
-    }
-
-    pub fn from_bool(b: bool) -> Value<'a> {
-        Value::JSONValue(serde_json::Value::Bool(b))
-    }
-
-    pub fn from_i64(n: i64) -> Value<'a> {
-        Value::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::I64(n))))
-    }
-
-    pub fn from_u64(n: u64) -> Value<'a> {
-        Value::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::U64(n))))
-    }
-
-    pub fn from_f64(n: f64) -> Value<'a> {
-        Value::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::F64(n))))
-    }
-
-    pub fn from_json_value(v: serde_json::Value) -> Value<'a> {
-        Value::JSONValue(v)
-    }
-
-    pub fn from_json_value_ref(v: &'a serde_json::Value) -> Value<'a> {
-        Value::JSONValueRef(v)
-    }
-
-    pub fn null() -> Value<'a> {
-        Value::JSONValue(serde_json::Value::Null)
-    }
-
-    /// Convert to a string for JSON format.
-    pub fn to_json(&self) -> String {
-        match self {
-            Value::Str(s) => {
-                let mut string = String::with_capacity(s.len() + 2);
-                string.push('"');
-                let mut from = 0;
-                for (i, c) in s.char_indices() {
-                    let esc = c.escape_debug();
-                    if esc.len() != 1 {
-                        string.push_str(&s[from..i]);
-                        for c in esc {
-                            string.push(c);
-                        }
-                        from = i + c.len_utf8();
-                    }
-                }
-                string.push_str(&s[from..]);
-                string.push('"');
-
-                string
-            }
-            Value::JSONValue(v) => {
-                v.to_string()
-            }
-            Value::JSONValueRef(v) => {
-                v.to_string()
-            }
-        }
-    }
-
-    /// Convert to a string slice if it is possible (if it is a string).
-    pub fn as_str(&self) -> Option<&str> {
-        match self {
-            Value::Str(s) => {
-                Some(s)
-            }
-            Value::JSONValue(v) => {
-                match v {
-                    serde_json::Value::String(s) => Some(&s),
-                    _ => None
-                }
-            }
-            Value::JSONValueRef(v) => {
-                match v {
-                    serde_json::Value::String(s) => Some(&s),
-                    _ => None
-                }
-            }
-        }
-    }
-}
-
-impl<'a> serde::ser::Serialize for Value<'a> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: serde::Serializer {
-        match self {
-            Value::Str(s) => s.serialize(serializer),
-            Value::JSONValue(v) => v.serialize(serializer),
-            Value::JSONValueRef(v) => v.serialize(serializer)
-        }
-    }
-}
-
-impl<'a> PartialEq<Value<'a>> for str {
-    fn eq(&self, other: &Value) -> bool {
-        match other {
-            Value::Str(s) => s.eq(&self),
-            Value::JSONValue(v) => v.eq(self),
-            Value::JSONValueRef(v) => v.eq(&self)
-        }
-    }
-}
-
-impl<'a> PartialEq<Value<'a>> for &'a str {
-    fn eq(&self, other: &Value) -> bool {
-        match other {
-            Value::Str(s) => s.eq(self),
-            Value::JSONValue(v) => v.eq(self),
-            Value::JSONValueRef(v) => v.eq(self)
-        }
-    }
-}
-
-impl<'a> Display for Value<'a> {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self {
-            Value::Str(s) => s.fmt(f),
-            Value::JSONValue(v) => {
-                match v.as_str() {
-                    Some(s) => s.fmt(f),
-                    None => v.fmt(f)
-                }
-            }
-            Value::JSONValueRef(v) => {
-                match v.as_str() {
-                    Some(s) => s.fmt(f),
-                    None => v.fmt(f)
-                }
-            }
-        }
-    }
-}
-
-impl<'a> JSONGetTextBuilder<'a> {
+impl<'a, 'e> JSONGetTextBuilder<'a> {
     /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
-    pub fn new(default_key: &str) -> JSONGetTextBuilder {
+    pub fn new<S: AsRef<str>>(default_key: S) -> JSONGetTextBuilder<'a> {
+        Self::from_default_key_str(default_key)
+    }
+
+    /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
+    pub fn from_default_key_str<S: AsRef<str>>(default_key: S) -> JSONGetTextBuilder<'a> {
+        Self::from_default_key_string(default_key.as_ref().to_string())
+    }
+
+    /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
+    pub fn from_default_key_string(default_key: String) -> JSONGetTextBuilder<'a> {
         JSONGetTextBuilder {
-            default_key: default_key.to_string(),
+            default_key: default_key,
             context: HashMap::new(),
         }
     }
 
     /// Add a JSON string to the context for a specify key. The JSON string must represent an object (key-value).
-    pub fn add_json_string_to_context(&mut self, key: &str, json: &str) -> Result<&Self, String> {
+    pub fn add_json_string_to_context<K: AsRef<str>, J: AsRef<str>>(&mut self, key: K, json: J) -> Result<&Self, JSONGetTextBuilderError> {
+        let key = key.as_ref();
+
         if self.context.contains_key(key) {
-            return Err("The key exists.".to_string());
+            return Err(JSONGetTextBuilderError::KeyRepeat(key.to_string()));
         }
 
-        let data: HashMap<String, serde_json::Value> = serde_json::from_str(json).map_err(|err| { err.to_string() })?;
+        let data: HashMap<String, serde_json::Value> = serde_json::from_str(json.as_ref()).map_err(|err| JSONGetTextBuilderError::SerdeError(err))?;
 
         let mut map = HashMap::new();
 
         for (k, v) in data {
-            map.insert(k, Value::JSONValue(v));
+            map.insert(k, JSONGetTextValue::JSONValue(v));
         }
 
         self.context.insert(key.to_string(), map);
@@ -198,17 +96,19 @@ impl<'a> JSONGetTextBuilder<'a> {
     }
 
     /// Add JSON binary data to the context for a specify key. The JSON binary data must represent an object (key-value).
-    pub fn add_json_bytes_to_context(&mut self, key: &str, json: &[u8]) -> Result<&Self, String> {
+    pub fn add_json_bytes_to_context<K: AsRef<str> + 'e, J: ?Sized + AsRef<[u8]>>(&mut self, key: K, json: &J) -> Result<&Self, JSONGetTextBuilderError> {
+        let key = key.as_ref();
+
         if self.context.contains_key(key) {
-            return Err("The key exists.".to_string());
+            return Err(JSONGetTextBuilderError::KeyRepeat(key.to_string()));
         }
 
-        let data: HashMap<String, serde_json::Value> = serde_json::from_slice(json).map_err(|err| { err.to_string() })?;
+        let data: HashMap<String, serde_json::Value> = serde_json::from_slice(json.as_ref()).map_err(|err| JSONGetTextBuilderError::SerdeError(err))?;
 
         let mut map = HashMap::new();
 
         for (k, v) in data {
-            map.insert(k, Value::JSONValue(v));
+            map.insert(k, JSONGetTextValue::JSONValue(v));
         }
 
         self.context.insert(key.to_string(), map);
@@ -217,19 +117,21 @@ impl<'a> JSONGetTextBuilder<'a> {
     }
 
     /// Add JSON binary data from a file to the context for a specify key. The JSON binary data must represent an object (key-value).
-    pub fn add_json_file_to_context<P: AsRef<Path>>(&mut self, key: &str, path: P) -> Result<&Self, String> {
+    pub fn add_json_file_to_context<K: AsRef<str> + 'e, P: AsRef<Path>>(&mut self, key: K, path: P) -> Result<&Self, JSONGetTextBuilderError> {
+        let key = key.as_ref();
+
         if self.context.contains_key(key) {
-            return Err("The key exists.".to_string());
+            return Err(JSONGetTextBuilderError::KeyRepeat(key.to_string()));
         }
 
-        let file = File::open(path).map_err(|err| { err.to_string() })?;
+        let file = File::open(path).map_err(|err| JSONGetTextBuilderError::IOError(err))?;
 
-        let data: HashMap<String, serde_json::Value> = serde_json::from_reader(&file).map_err(|err| { err.to_string() })?;
+        let data: HashMap<String, serde_json::Value> = serde_json::from_reader(&file).map_err(|err| JSONGetTextBuilderError::SerdeError(err))?;
 
         let mut map = HashMap::new();
 
         for (k, v) in data {
-            map.insert(k, Value::JSONValue(v));
+            map.insert(k, JSONGetTextValue::JSONValue(v));
         }
 
         self.context.insert(key.to_string(), map);
@@ -238,9 +140,11 @@ impl<'a> JSONGetTextBuilder<'a> {
     }
 
     /// Add a map to the context.
-    pub fn add_map_to_context<P: AsRef<Path>>(&mut self, key: &str, map: HashMap<String, Value<'a>>) -> Result<&Self, String> {
+    pub fn add_map_to_context<K: AsRef<str> + 'e>(&mut self, key: K, map: HashMap<String, JSONGetTextValue<'a>>) -> Result<&Self, JSONGetTextBuilderError> {
+        let key = key.as_ref();
+
         if self.context.contains_key(key) {
-            return Err("The key exists.".to_string());
+            return Err(JSONGetTextBuilderError::KeyRepeat(key.to_string()));
         }
 
         self.context.insert(key.to_string(), map);
@@ -249,7 +153,7 @@ impl<'a> JSONGetTextBuilder<'a> {
     }
 
     /// Build a JSONGetText instance.
-    pub fn build(self) -> Result<JSONGetText<'a>, String> {
+    pub fn build(self) -> Result<JSONGetText<'a>, JSONGetTextError> {
         JSONGetText::from_context_inner(self.default_key, self.context)
     }
 }
@@ -261,24 +165,44 @@ pub struct JSONGetText<'a> {
     context: Context<'a>,
 }
 
+#[derive(Debug)]
+pub enum JSONGetTextError {
+    DefaultKeyNotFound,
+    TextInKeyNotInDefaultKey {
+        key: String,
+        text: String,
+    },
+}
+
 impl<'a> JSONGetText<'a> {
     /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
-    pub fn build(default_key: &str) -> JSONGetTextBuilder {
-        JSONGetTextBuilder::new(default_key)
+    pub fn build<S: AsRef<str>>(default_key: S) -> JSONGetTextBuilder<'a> {
+        Self::build_with_default_key_str(default_key)
+    }
+
+    /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
+    pub fn build_with_default_key_str<S: AsRef<str>>(default_key: S) -> JSONGetTextBuilder<'a> {
+        JSONGetTextBuilder::from_default_key_str(default_key)
+    }
+
+    /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
+    pub fn build_with_default_key_string(default_key: String) -> JSONGetTextBuilder<'a> {
+        JSONGetTextBuilder::from_default_key_string(default_key)
     }
 
     /// Create a new JSONGetText instance with context and a default key.
-    pub fn from_context(default_key: &str, context: Context<'a>) -> Result<JSONGetText<'a>, String> {
-        JSONGetText::from_context_inner(default_key.to_string(), context)
+    pub fn from_context_with_default_key_str<S: AsRef<str>>(default_key: S, context: Context<'a>) -> Result<JSONGetText<'a>, JSONGetTextError> {
+        JSONGetText::from_context_inner(default_key.as_ref().to_string(), context)
     }
 
-    fn from_context_inner(default_key: String, mut context: Context<'a>) -> Result<JSONGetText<'a>, String> {
-        if !context.contains_key(&default_key) {
-            return Err("Cannot find the default key in the context.".to_string());
-        }
+    /// Create a new JSONGetText instance with context and a default key.
+    pub fn from_context_with_default_key_string(default_key: String, context: Context<'a>) -> Result<JSONGetText<'a>, JSONGetTextError> {
+        JSONGetText::from_context_inner(default_key, context)
+    }
 
+    fn from_context_inner(default_key: String, mut context: Context<'a>) -> Result<JSONGetText<'a>, JSONGetTextError> {
         if !context.contains_key(&default_key) {
-            return Err("Context should contain the default key.".to_string());
+            return Err(JSONGetTextError::DefaultKeyNotFound);
         }
 
         let default_map = context.remove(&default_key).unwrap();
@@ -290,7 +214,10 @@ impl<'a> JSONGetText<'a> {
                 {
                     for map_key in map.keys() {
                         if !default_map.contains_key(map_key) {
-                            return Err(format! {"The text `{}` in the key `{}` is not in the map of the default key.", map_key, key});
+                            return Err(JSONGetTextError::TextInKeyNotInDefaultKey {
+                                key,
+                                text: map_key.clone(),
+                            });
                         }
                     }
                 }
@@ -303,14 +230,14 @@ impl<'a> JSONGetText<'a> {
                     }
                 }
 
-                inner_context.insert(key.clone(), map);
+                inner_context.insert(key, map);
             }
 
             inner_context.insert(default_key.clone(), default_map);
         }
 
         Ok(JSONGetText {
-            default_key: default_key,
+            default_key,
             context: inner_context,
         })
     }
@@ -332,47 +259,47 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Get a string map from context by a key.
-    pub fn get(&self, key: &str) -> &HashMap<String, Value> {
-        match self.context.get(key) {
+    pub fn get<K: AsRef<str>>(&self, key: K) -> &HashMap<String, JSONGetTextValue> {
+        match self.context.get(key.as_ref()) {
             Some(m) => m,
             None => self.context.get(&self.default_key).unwrap()
         }
     }
 
     /// Get text from context.
-    pub fn get_text(&self, text: &str) -> Option<Value> {
+    pub fn get_text<T: AsRef<str>>(&self, text: T) -> Option<JSONGetTextValue> {
         let map = self.context.get(&self.default_key).unwrap();
 
-        map.get(text).map(|s| match s {
-            Value::JSONValue(v) => Value::JSONValueRef(v),
-            _ => Value::Str("")
+        map.get(text.as_ref()).map(|s| match s {
+            JSONGetTextValue::JSONValue(v) => JSONGetTextValue::JSONValueRef(v),
+            _ => JSONGetTextValue::Str("")
         })
     }
 
     /// Get text from context with a specific key.
-    pub fn get_text_with_key(&self, key: &str, text: &str) -> Option<Value> {
-        let map = match self.context.get(key) {
+    pub fn get_text_with_key<K: AsRef<str>, T: AsRef<str>>(&self, key: K, text: T) -> Option<JSONGetTextValue> {
+        let map = match self.context.get(key.as_ref()) {
             Some(m) => m,
             None => self.context.get(&self.default_key).unwrap()
         };
 
-        map.get(text).map(|s| match s {
-            Value::JSONValue(v) => Value::JSONValueRef(v),
-            _ => Value::Str("")
+        map.get(text.as_ref()).map(|s| match s {
+            JSONGetTextValue::JSONValue(v) => JSONGetTextValue::JSONValueRef(v),
+            _ => JSONGetTextValue::Str("")
         })
     }
 
     /// Get multiple text from context. The output map is usually used for serialization.
-    #[cfg(feature = "nightly")]
-    pub fn get_multiple_text(&self, text_array: &[&str]) -> Option<HashMap<&str, Value>> {
+    pub fn get_multiple_text<'b, T: AsRef<str>>(&self, text_array: &[&'b T]) -> Option<HashMap<&'b str, JSONGetTextValue>> {
         let map = self.context.get(&self.default_key).unwrap();
 
         let mut new_map = HashMap::new();
 
         for &text in text_array.iter() {
-            let (key, value) = map.get_key_value(text)?;
-            new_map.insert(key.as_str(), Value::JSONValueRef(match value {
-                Value::JSONValue(v) => v,
+            let text = text.as_ref();
+            let value = map.get(text)?;
+            new_map.insert(text, JSONGetTextValue::JSONValueRef(match value {
+                JSONGetTextValue::JSONValue(v) => v,
                 _ => return None
             }));
         }
@@ -381,9 +308,8 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Get multiple text from context with a specific key. The output map is usually used for serialization.
-    #[cfg(feature = "nightly")]
-    pub fn get_multiple_text_with_key(&self, key: &str, text_array: &[&str]) -> Option<HashMap<&str, Value>> {
-        let map = match self.context.get(key) {
+    pub fn get_multiple_text_with_key<'b, K: AsRef<str>, T: ?Sized + AsRef<str>>(&self, key: K, text_array: &[&'b T]) -> Option<HashMap<&'b str, JSONGetTextValue>> {
+        let map = match self.context.get(key.as_ref()) {
             Some(m) => m,
             None => self.context.get(&self.default_key).unwrap()
         };
@@ -391,9 +317,10 @@ impl<'a> JSONGetText<'a> {
         let mut new_map = HashMap::new();
 
         for &text in text_array.iter() {
-            let (key, value) = map.get_key_value(text)?;
-            new_map.insert(key.as_str(), Value::JSONValueRef(match value {
-                Value::JSONValue(v) => v,
+            let text = text.as_ref();
+            let value = map.get(text)?;
+            new_map.insert(text, JSONGetTextValue::JSONValueRef(match value {
+                JSONGetTextValue::JSONValue(v) => v,
                 _ => return None
             }));
         }
@@ -402,7 +329,7 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Get filtered text from context by a Regex instance. The output map is usually used for serialization.
-    pub fn get_filtered_text(&self, regex: &Regex) -> Option<HashMap<&str, Value>> {
+    pub fn get_filtered_text(&self, regex: &Regex) -> Option<HashMap<&str, JSONGetTextValue>> {
         let map = self.context.get(&self.default_key).unwrap();
 
         let mut new_map = HashMap::new();
@@ -411,8 +338,8 @@ impl<'a> JSONGetText<'a> {
             if !regex.is_match(key) {
                 continue;
             }
-            new_map.insert(key.as_str(), Value::JSONValueRef(match value {
-                Value::JSONValue(v) => v,
+            new_map.insert(key.as_str(), JSONGetTextValue::JSONValueRef(match value {
+                JSONGetTextValue::JSONValue(v) => v,
                 _ => return None
             }));
         }
@@ -421,8 +348,8 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Get filtered text from context with a specific key by a Regex instance. The output map is usually used for serialization.
-    pub fn get_filtered_text_with_key(&self, key: &str, regex: &Regex) -> Option<HashMap<&str, Value>> {
-        let map = match self.context.get(key) {
+    pub fn get_filtered_text_with_key<K: AsRef<str>>(&self, key: K, regex: &Regex) -> Option<HashMap<&str, JSONGetTextValue>> {
+        let map = match self.context.get(key.as_ref()) {
             Some(m) => m,
             None => self.context.get(&self.default_key).unwrap()
         };
@@ -433,8 +360,8 @@ impl<'a> JSONGetText<'a> {
             if !regex.is_match(key) {
                 continue;
             }
-            new_map.insert(key.as_str(), Value::JSONValueRef(match value {
-                Value::JSONValue(v) => v,
+            new_map.insert(key.as_str(), JSONGetTextValue::JSONValueRef(match value {
+                JSONGetTextValue::JSONValue(v) => v,
                 _ => return None
             }));
         }
@@ -443,85 +370,4 @@ impl<'a> JSONGetText<'a> {
     }
 }
 
-/// Used for including json files into your executable binary file for building a JSONGetText instance.
-///
-/// ```
-/// #[macro_use] extern crate lazy_static_include;
-/// #[macro_use] extern crate lazy_static;
-/// #[macro_use] extern crate json_gettext;
-///
-/// let ctx = static_json_gettext_build!("en_US",
-///            "en_US", "langs/en_US.json",
-///            "zh_TW", "langs/zh_TW.json"
-///        ).unwrap();
-///
-/// println!("{:?}", ctx);
-/// ```
-#[macro_export]
-macro_rules! static_json_gettext_build {
-    ( $default_key:expr, $($key:expr, $path:expr), * ) => {
-        {
-            use ::json_gettext::JSONGetText;
-
-            let mut builder = JSONGetText::build($default_key);
-
-            lazy_static_include_bytes_vec!(DATA $(, $path)* );
-
-            let mut p = 0usize;
-
-            $(
-                {
-                    let data = DATA[p];
-
-                    p += 1;
-
-                    builder.add_json_bytes_to_context($key, data).unwrap();
-                }
-            )*
-
-            builder.build()
-        }
-    };
-}
-
-/// Used for getting single or multiple text from context.
-///
-/// ```
-/// #[macro_use] extern crate lazy_static_include;
-/// #[macro_use] extern crate lazy_static;
-/// #[macro_use] extern crate json_gettext;
-///
-/// let ctx = static_json_gettext_build!("en_US",
-///            "en_US", "langs/en_US.json",
-///            "zh_TW", "langs/zh_TW.json"
-///        ).unwrap();
-///
-/// assert_eq!("Hello, world!", get_text!(ctx, "hello").unwrap());
-/// assert_eq!("哈囉，世界！", get_text!(ctx, "zh_TW", "hello").unwrap());
-/// ```
-#[macro_export]
-macro_rules! get_text {
-    ( $ctx:ident, $text:expr ) => {
-        {
-            $ctx.get_text($text)
-        }
-    };
-    ( $ctx:ident, $key:expr, $text:expr ) => {
-        {
-            $ctx.get_text_with_key($key, $text)
-        }
-    };
-    ( $ctx:ident, $key:expr, $text:expr, $($text_array:expr), + ) => {
-        {
-            let mut text_array = vec![$text];
-
-            $(
-                {
-                    text_array.push($text_array);
-                }
-            )*
-
-            $ctx.get_multiple_text_with_key($key, &text_array)
-        }
-    };
-}
+mod macros;
