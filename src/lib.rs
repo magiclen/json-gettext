@@ -57,29 +57,31 @@ pub enum JSONGetTextBuilderError {
 
 impl<'a, 'e> JSONGetTextBuilder<'a> {
     /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
-    pub fn new<S: AsRef<str>>(default_key: S) -> JSONGetTextBuilder<'a> {
-        Self::from_default_key_str(default_key)
-    }
-
-    /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
-    pub fn from_default_key_str<S: AsRef<str>>(default_key: S) -> JSONGetTextBuilder<'a> {
-        Self::from_default_key_string(default_key.as_ref().to_string())
-    }
-
-    /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
-    pub fn from_default_key_string(default_key: String) -> JSONGetTextBuilder<'a> {
+    pub fn new<S: Into<String>>(default_key: S) -> JSONGetTextBuilder<'a> {
         JSONGetTextBuilder {
-            default_key: default_key,
+            default_key: default_key.into(),
             context: HashMap::new(),
         }
     }
 
-    /// Add a JSON string to the context for a specify key. The JSON string must represent an object (key-value).
-    pub fn add_json_string_to_context<K: AsRef<str>, J: AsRef<str>>(&mut self, key: K, json: J) -> Result<&Self, JSONGetTextBuilderError> {
-        let key = key.as_ref();
+    #[deprecated(since = "2.0.2", note = "please use `new` instead")]
+    /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
+    pub fn from_default_key_str<S: AsRef<str>>(default_key: S) -> JSONGetTextBuilder<'a> {
+        Self::new(default_key.as_ref().to_string())
+    }
 
-        if self.context.contains_key(key) {
-            return Err(JSONGetTextBuilderError::KeyRepeat(key.to_string()));
+    #[deprecated(since = "2.0.2", note = "please use `new` instead")]
+    /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
+    pub fn from_default_key_string(default_key: String) -> JSONGetTextBuilder<'a> {
+        Self::new(default_key)
+    }
+
+    /// Add a JSON string to the context for a specify key. The JSON string must represent an object (key-value).
+    pub fn add_json_string_to_context<K: Into<String>, J: AsRef<str>>(&mut self, key: K, json: J) -> Result<&Self, JSONGetTextBuilderError> {
+        let key = key.into();
+
+        if self.context.contains_key(&key) {
+            return Err(JSONGetTextBuilderError::KeyRepeat(key));
         }
 
         let data: HashMap<String, serde_json::Value> = serde_json::from_str(json.as_ref()).map_err(|err| JSONGetTextBuilderError::SerdeError(err))?;
@@ -90,17 +92,17 @@ impl<'a, 'e> JSONGetTextBuilder<'a> {
             map.insert(k, JSONGetTextValue::JSONValue(v));
         }
 
-        self.context.insert(key.to_string(), map);
+        self.context.insert(key, map);
 
         Ok(self)
     }
 
     /// Add JSON binary data to the context for a specify key. The JSON binary data must represent an object (key-value).
-    pub fn add_json_bytes_to_context<K: AsRef<str> + 'e, J: ?Sized + AsRef<[u8]>>(&mut self, key: K, json: &J) -> Result<&Self, JSONGetTextBuilderError> {
-        let key = key.as_ref();
+    pub fn add_json_bytes_to_context<K: Into<String> + 'e, J: ?Sized + AsRef<[u8]>>(&mut self, key: K, json: &J) -> Result<&Self, JSONGetTextBuilderError> {
+        let key = key.into();
 
-        if self.context.contains_key(key) {
-            return Err(JSONGetTextBuilderError::KeyRepeat(key.to_string()));
+        if self.context.contains_key(&key) {
+            return Err(JSONGetTextBuilderError::KeyRepeat(key));
         }
 
         let data: HashMap<String, serde_json::Value> = serde_json::from_slice(json.as_ref()).map_err(|err| JSONGetTextBuilderError::SerdeError(err))?;
@@ -111,17 +113,17 @@ impl<'a, 'e> JSONGetTextBuilder<'a> {
             map.insert(k, JSONGetTextValue::JSONValue(v));
         }
 
-        self.context.insert(key.to_string(), map);
+        self.context.insert(key, map);
 
         Ok(self)
     }
 
     /// Add JSON binary data from a file to the context for a specify key. The JSON binary data must represent an object (key-value).
-    pub fn add_json_file_to_context<K: AsRef<str> + 'e, P: AsRef<Path>>(&mut self, key: K, path: P) -> Result<&Self, JSONGetTextBuilderError> {
-        let key = key.as_ref();
+    pub fn add_json_file_to_context<K: Into<String> + 'e, P: AsRef<Path>>(&mut self, key: K, path: P) -> Result<&Self, JSONGetTextBuilderError> {
+        let key = key.into();
 
-        if self.context.contains_key(key) {
-            return Err(JSONGetTextBuilderError::KeyRepeat(key.to_string()));
+        if self.context.contains_key(&key) {
+            return Err(JSONGetTextBuilderError::KeyRepeat(key));
         }
 
         let file = File::open(path).map_err(|err| JSONGetTextBuilderError::IOError(err))?;
@@ -134,20 +136,20 @@ impl<'a, 'e> JSONGetTextBuilder<'a> {
             map.insert(k, JSONGetTextValue::JSONValue(v));
         }
 
-        self.context.insert(key.to_string(), map);
+        self.context.insert(key, map);
 
         Ok(self)
     }
 
     /// Add a map to the context.
-    pub fn add_map_to_context<K: AsRef<str> + 'e>(&mut self, key: K, map: HashMap<String, JSONGetTextValue<'a>>) -> Result<&Self, JSONGetTextBuilderError> {
-        let key = key.as_ref();
+    pub fn add_map_to_context<K: Into<String> + 'e>(&mut self, key: K, map: HashMap<String, JSONGetTextValue<'a>>) -> Result<&Self, JSONGetTextBuilderError> {
+        let key = key.into();
 
-        if self.context.contains_key(key) {
-            return Err(JSONGetTextBuilderError::KeyRepeat(key.to_string()));
+        if self.context.contains_key(&key) {
+            return Err(JSONGetTextBuilderError::KeyRepeat(key));
         }
 
-        self.context.insert(key.to_string(), map);
+        self.context.insert(key, map);
 
         Ok(self)
     }
@@ -176,25 +178,34 @@ pub enum JSONGetTextError {
 
 impl<'a> JSONGetText<'a> {
     /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
-    pub fn build<S: AsRef<str>>(default_key: S) -> JSONGetTextBuilder<'a> {
-        Self::build_with_default_key_str(default_key)
+    pub fn build<S: Into<String>>(default_key: S) -> JSONGetTextBuilder<'a> {
+        JSONGetTextBuilder::new(default_key)
     }
 
+    #[deprecated(since = "2.0.2", note = "please use `build` instead")]
     /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
     pub fn build_with_default_key_str<S: AsRef<str>>(default_key: S) -> JSONGetTextBuilder<'a> {
-        JSONGetTextBuilder::from_default_key_str(default_key)
+        JSONGetTextBuilder::new(default_key.as_ref())
     }
 
+    #[deprecated(since = "2.0.2", note = "please use `build` instead")]
     /// Create a new JSONGetTextBuilder instance. You need to decide your default key at the stage.
     pub fn build_with_default_key_string(default_key: String) -> JSONGetTextBuilder<'a> {
-        JSONGetTextBuilder::from_default_key_string(default_key)
+        JSONGetTextBuilder::new(default_key)
     }
 
+    /// Create a new JSONGetText instance with context and a default key.
+    pub fn from_context_with_default_key<S: Into<String>>(default_key: S, context: Context<'a>) -> Result<JSONGetText<'a>, JSONGetTextError> {
+        JSONGetText::from_context_inner(default_key.into(), context)
+    }
+
+    #[deprecated(since = "2.0.2", note = "please use `from_context_with_default_key` instead")]
     /// Create a new JSONGetText instance with context and a default key.
     pub fn from_context_with_default_key_str<S: AsRef<str>>(default_key: S, context: Context<'a>) -> Result<JSONGetText<'a>, JSONGetTextError> {
         JSONGetText::from_context_inner(default_key.as_ref().to_string(), context)
     }
 
+    #[deprecated(since = "2.0.2", note = "please use `from_context_with_default_key` instead")]
     /// Create a new JSONGetText instance with context and a default key.
     pub fn from_context_with_default_key_string(default_key: String, context: Context<'a>) -> Result<JSONGetText<'a>, JSONGetTextError> {
         JSONGetText::from_context_inner(default_key, context)
