@@ -16,27 +16,55 @@ impl<'a> JSONGetTextValue<'a> {
         JSONGetTextValue::Str(s)
     }
 
-    pub fn from_string(s: String) -> JSONGetTextValue<'a> {
+    pub fn from_string(s: String) -> JSONGetTextValue<'static> {
         JSONGetTextValue::JSONValue(serde_json::Value::String(s))
     }
 
-    pub fn from_bool(b: bool) -> JSONGetTextValue<'a> {
+    pub fn from_bool(b: bool) -> JSONGetTextValue<'static> {
         JSONGetTextValue::JSONValue(serde_json::Value::Bool(b))
     }
 
-    pub fn from_i64(n: i64) -> JSONGetTextValue<'a> {
+    pub fn from_i8(n: i8) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::I64(n as i64))))
+    }
+
+    pub fn from_i16(n: i16) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::I64(n as i64))))
+    }
+
+    pub fn from_i32(n: i32) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::I64(n as i64))))
+    }
+
+    pub fn from_i64(n: i64) -> JSONGetTextValue<'static> {
         JSONGetTextValue::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::I64(n))))
     }
 
-    pub fn from_u64(n: u64) -> JSONGetTextValue<'a> {
+    pub fn from_u8(n: u8) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::U64(n as u64))))
+    }
+
+    pub fn from_u16(n: u16) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::U64(n as u64))))
+    }
+
+    pub fn from_u32(n: u32) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::U64(n as u64))))
+    }
+
+    pub fn from_u64(n: u64) -> JSONGetTextValue<'static> {
         JSONGetTextValue::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::U64(n))))
     }
 
-    pub fn from_f64(n: f64) -> JSONGetTextValue<'a> {
+    pub fn from_f32(n: f32) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::F64(n as f64))))
+    }
+
+    pub fn from_f64(n: f64) -> JSONGetTextValue<'static> {
         JSONGetTextValue::JSONValue(serde_json::Value::Number(serde_json::Number::from(serde_json::de::ParserNumber::F64(n))))
     }
 
-    pub fn from_json_value(v: serde_json::Value) -> JSONGetTextValue<'a> {
+    pub fn from_json_value(v: serde_json::Value) -> JSONGetTextValue<'static> {
         JSONGetTextValue::JSONValue(v)
     }
 
@@ -44,7 +72,7 @@ impl<'a> JSONGetTextValue<'a> {
         JSONGetTextValue::JSONValueRef(v)
     }
 
-    pub fn null() -> JSONGetTextValue<'a> {
+    pub fn null() -> JSONGetTextValue<'static> {
         JSONGetTextValue::JSONValue(serde_json::Value::Null)
     }
 
