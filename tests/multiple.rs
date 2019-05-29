@@ -1,9 +1,4 @@
 #[macro_use]
-extern crate lazy_static_include;
-#[macro_use]
-extern crate lazy_static;
-
-#[macro_use]
 extern crate json_gettext;
 
 extern crate serde_json;
