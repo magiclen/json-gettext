@@ -5,7 +5,6 @@ extern crate serde;
 
 mod json_gettext_value;
 mod json_gettext;
-//mod reloadable_json_gettext;
 mod builder;
 mod macros;
 
