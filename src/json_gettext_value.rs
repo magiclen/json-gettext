@@ -4,7 +4,7 @@ use std::convert::{TryFrom, TryInto};
 use crate::serde::{Serialize, Serializer, Deserialize, Deserializer};
 use crate::serde::de::{Visitor, Error as DeError, SeqAccess, MapAccess};
 use crate::serde_json::{Value, Map, Number};
-use crate::serde_json::de::ParserNumber;
+use crate::serde_json::de::{ParserNumber};
 
 /// Represents any valid JSON value. Reference can also be wrapped.
 #[derive(Debug, Clone, PartialEq)]

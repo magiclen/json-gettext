@@ -1,15 +1,26 @@
 use std::collections::HashMap;
 
+use crate::serde_json::{Value, Map, Error as JSONError};
+
 use crate::{Context, JSONGetTextValue, JSONGetTextBuilder};
 use crate::regex::Regex;
 
 #[derive(Debug)]
 pub enum JSONGetTextError {
     DefaultKeyNotFound,
+    KeyNotFound,
     TextInKeyNotInDefaultKey {
         key: String,
         text: String,
     },
+    SerdeJSONError(JSONError),
+}
+
+impl From<JSONError> for JSONGetTextError {
+    #[inline]
+    fn from(v: JSONError) -> JSONGetTextError {
+        JSONGetTextError::SerdeJSONError(v)
+    }
 }
 
 /// A wrapper for context and a default key. **Keys** are usually considered as locales.
@@ -27,7 +38,7 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Create a new JSONGetText instance with context and a default key.
-    pub fn from_context_with_default_key<S: AsRef<str> + Into<String>>(default_key: S, mut context: Context<'a>) -> Result<JSONGetText<'a>, JSONGetTextError> {
+    pub(crate) fn from_context_with_default_key<S: AsRef<str> + Into<String>>(default_key: S, mut context: Context<'a>) -> Result<JSONGetText<'a>, JSONGetTextError> {
         if !context.contains_key(default_key.as_ref()) {
             return Err(JSONGetTextError::DefaultKeyNotFound);
         }
@@ -173,5 +184,169 @@ impl<'a> JSONGetText<'a> {
         }
 
         Some(new_map)
+    }
+}
+
+impl<'a> JSONGetText<'a> {
+    pub fn set_json<K: AsRef<str> + Into<String>, J: AsRef<str> + ?Sized>(&mut self, key: K, json: &'a J) -> Result<&mut Self, JSONGetTextError> {
+        let key_str = key.as_ref();
+
+        if self.default_key.eq(key_str) {
+            let default_map_old = self.context.remove(key_str).unwrap();
+
+            let default_map: HashMap<String, JSONGetTextValue<'a>> = serde_json::from_str(json.as_ref())?;
+
+            let mut err = None;
+
+            for (key, map) in &self.context {
+                for map_key in map.keys() {
+                    if !default_map.contains_key(map_key) {
+                        err = Some(JSONGetTextError::TextInKeyNotInDefaultKey {
+                            key: key.clone(),
+                            text: map_key.clone(),
+                        });
+
+                        break;
+                    }
+                }
+            }
+
+            let key = key.into();
+
+            if let Some(err) = err {
+                self.context.insert(key, default_map_old);
+
+                Err(err)
+            } else {
+                self.context.insert(key, default_map);
+
+                Ok(self)
+            }
+        } else {
+            let map_old = self.context.remove(key_str);
+
+            match map_old {
+                Some(map_old) => {
+                    let map: HashMap<String, JSONGetTextValue<'a>> = serde_json::from_str(json.as_ref())?;
+
+                    let mut err = None;
+
+                    let key = key.into();
+
+                    {
+                        let default_map = self.context.get(&self.default_key).unwrap();
+
+                        for map_key in map.keys() {
+                            if !default_map.contains_key(map_key) {
+                                err = Some(JSONGetTextError::TextInKeyNotInDefaultKey {
+                                    key: key.clone(),
+                                    text: map_key.clone(),
+                                });
+
+                                break;
+                            }
+                        }
+                    }
+
+                    if let Some(err) = err {
+                        self.context.insert(key, map_old);
+
+                        Err(err)
+                    } else {
+                        self.context.insert(key, map);
+
+                        Ok(self)
+                    }
+                }
+                None => Err(JSONGetTextError::KeyNotFound)
+            }
+        }
+    }
+
+    pub fn set_json_owned<K: AsRef<str> + Into<String>, J: AsRef<str>>(&mut self, key: K, json: J) -> Result<&mut Self, JSONGetTextError> {
+        let key_str = key.as_ref();
+
+        if self.default_key.eq(key_str) {
+            let default_map_old = self.context.remove(key_str).unwrap();
+
+            let value: Map<String, Value> = serde_json::from_str(json.as_ref())?;
+
+            let mut default_map: HashMap<String, JSONGetTextValue<'static>> = HashMap::with_capacity(value.len());
+
+            for (k, v) in value {
+                default_map.insert(k, JSONGetTextValue::from_json_value(v));
+            }
+
+            let mut err = None;
+
+            for (key, map) in &self.context {
+                for map_key in map.keys() {
+                    if !default_map.contains_key(map_key) {
+                        err = Some(JSONGetTextError::TextInKeyNotInDefaultKey {
+                            key: key.clone(),
+                            text: map_key.clone(),
+                        });
+
+                        break;
+                    }
+                }
+            }
+
+            let key = key.into();
+
+            if let Some(err) = err {
+                self.context.insert(key, default_map_old);
+
+                Err(err)
+            } else {
+                self.context.insert(key, default_map);
+
+                Ok(self)
+            }
+        } else {
+            let map_old = self.context.remove(key_str);
+
+            match map_old {
+                Some(map_old) => {
+                    let value: Map<String, Value> = serde_json::from_str(json.as_ref())?;
+
+                    let mut map: HashMap<String, JSONGetTextValue<'static>> = HashMap::with_capacity(value.len());
+
+                    for (k, v) in value {
+                        map.insert(k, JSONGetTextValue::from_json_value(v));
+                    }
+
+                    let mut err = None;
+
+                    let key = key.into();
+
+                    {
+                        let default_map = self.context.get(&self.default_key).unwrap();
+
+                        for map_key in map.keys() {
+                            if !default_map.contains_key(map_key) {
+                                err = Some(JSONGetTextError::TextInKeyNotInDefaultKey {
+                                    key: key.clone(),
+                                    text: map_key.clone(),
+                                });
+
+                                break;
+                            }
+                        }
+                    }
+
+                    if let Some(err) = err {
+                        self.context.insert(key, map_old);
+
+                        Err(err)
+                    } else {
+                        self.context.insert(key, map);
+
+                        Ok(self)
+                    }
+                }
+                None => Err(JSONGetTextError::KeyNotFound)
+            }
+        }
     }
 }
