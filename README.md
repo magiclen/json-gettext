@@ -33,7 +33,7 @@ features = ["rocketly"]
 
 Then, use the `static_json_gettext_build_rocketly` macro instead of the `static_json_gettext_build` macro to build a `JSONGetText`(`JSONGetTextManager`).
 
-```rust,ignore
+```rust
 #[macro_use] extern crate json_gettext;
 
 #[macro_use] extern crate rocket;
