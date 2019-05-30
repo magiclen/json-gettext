@@ -73,6 +73,12 @@ impl<'a> JSONGetText<'a> {
         vec
     }
 
+    /// Returns `true` if the context contains a value for the specified key.
+    #[inline]
+    pub fn contains_key<K: AsRef<str>>(&self, key: K) -> bool {
+        self.context.contains_key(key.as_ref())
+    }
+
     /// Get the default key.
     #[inline]
     pub fn get_default_key(&self) -> &str {
