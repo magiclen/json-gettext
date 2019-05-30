@@ -1,42 +1,49 @@
 use std::collections::HashMap;
 use std::io;
-use std::path::PathBuf;
+use std::path::Path;
 use std::fs::File;
 
 use crate::serde::Serialize;
 use crate::serde_json::{Value, Map, Error as JSONError};
 
-use crate::{Context, JSONGetTextValue, JSONGetText, JSONGetTextError};
+use crate::{Context, JSONGetTextValue, JSONGetText};
 
 #[derive(Debug)]
-pub enum JSONGetTextBuilderError {
+pub enum JSONGetTextBuildError {
+    DefaultKeyNotFound,
+    TextInKeyNotInDefaultKey {
+        key: String,
+        text: String,
+    },
     DuplicatedKey(String),
     IOError(io::Error),
     SerdeJSONError(JSONError),
 }
 
-impl ToString for JSONGetTextBuilderError {
+impl ToString for JSONGetTextBuildError {
     #[inline]
     fn to_string(&self) -> String {
         match self {
-            JSONGetTextBuilderError::DuplicatedKey(s) => s.clone(),
-            JSONGetTextBuilderError::IOError(err) => err.to_string(),
-            JSONGetTextBuilderError::SerdeJSONError(err) => err.to_string()
+            JSONGetTextBuildError::DefaultKeyNotFound => "The default key is not found.".to_string(),
+            JSONGetTextBuildError::TextInKeyNotInDefaultKey { key, text } => format!("The text `{}` in the key `{}` is not found in the default key.", text, key),
+            JSONGetTextBuildError::DuplicatedKey(s) => s.clone(),
+            JSONGetTextBuildError::IOError(err) => err.to_string(),
+            JSONGetTextBuildError::SerdeJSONError(err) => err.to_string()
         }
     }
 }
 
-impl From<io::Error> for JSONGetTextBuilderError {
+impl From<io::Error> for JSONGetTextBuildError {
     #[inline]
-    fn from(v: io::Error) -> JSONGetTextBuilderError {
-        JSONGetTextBuilderError::IOError(v)
+    fn from(v: io::Error) -> JSONGetTextBuildError {
+        JSONGetTextBuildError::IOError(v)
     }
 }
 
-impl From<JSONError> for JSONGetTextBuilderError {
+impl From<JSONError> for JSONGetTextBuildError {
     #[inline]
-    fn from(v: JSONError) -> JSONGetTextBuilderError {
-        JSONGetTextBuilderError::SerdeJSONError(v)
+    fn from(v: JSONError) -> JSONGetTextBuildError {
+        JSONGetTextBuildError::SerdeJSONError(v)
     }
 }
 
@@ -58,9 +65,9 @@ impl<'a> JSONGetTextBuilder<'a> {
     }
 
     /// Add a JSON string to the context for a specify key. The JSON string must represent a map object (key-value).
-    pub fn add_json<K: AsRef<str> + Into<String>, J: AsRef<str> + ?Sized>(&mut self, key: K, json: &'a J) -> Result<&mut Self, JSONGetTextBuilderError> {
+    pub fn add_json<K: AsRef<str> + Into<String>, J: AsRef<str> + ?Sized>(&mut self, key: K, json: &'a J) -> Result<&mut Self, JSONGetTextBuildError> {
         if self.context.contains_key(key.as_ref()) {
-            return Err(JSONGetTextBuilderError::DuplicatedKey(key.into()));
+            return Err(JSONGetTextBuildError::DuplicatedKey(key.into()));
         }
 
         let map: HashMap<String, JSONGetTextValue<'a>> = serde_json::from_str(json.as_ref())?;
@@ -73,9 +80,9 @@ impl<'a> JSONGetTextBuilder<'a> {
     }
 
     /// Add a JSON string to the context for a specify key. The JSON string must represent a map object (key-value).
-    pub fn add_json_owned<K: AsRef<str> + Into<String>, J: AsRef<str>>(&mut self, key: K, json: J) -> Result<&mut Self, JSONGetTextBuilderError> {
+    pub fn add_json_owned<K: AsRef<str> + Into<String>, J: AsRef<str>>(&mut self, key: K, json: J) -> Result<&mut Self, JSONGetTextBuildError> {
         if self.context.contains_key(key.as_ref()) {
-            return Err(JSONGetTextBuilderError::DuplicatedKey(key.into()));
+            return Err(JSONGetTextBuildError::DuplicatedKey(key.into()));
         }
 
         let value: Map<String, Value> = serde_json::from_str(json.as_ref())?;
@@ -94,12 +101,12 @@ impl<'a> JSONGetTextBuilder<'a> {
     }
 
     /// Add a JSON file to the context for a specify key. The JSON file must represent a map object (key-value).
-    pub fn add_json_file<K: AsRef<str> + Into<String>, P: Into<PathBuf>>(&mut self, key: K, path: P) -> Result<&mut Self, JSONGetTextBuilderError> {
+    pub fn add_json_file<K: AsRef<str> + Into<String>, P: AsRef<Path>>(&mut self, key: K, path: P) -> Result<&mut Self, JSONGetTextBuildError> {
         if self.context.contains_key(key.as_ref()) {
-            return Err(JSONGetTextBuilderError::DuplicatedKey(key.into()));
+            return Err(JSONGetTextBuildError::DuplicatedKey(key.into()));
         }
 
-        let path = path.into();
+        let path = path.as_ref();
 
         let value: Map<String, Value> = serde_json::from_reader(File::open(&path)?)?;
 
@@ -117,9 +124,9 @@ impl<'a> JSONGetTextBuilder<'a> {
     }
 
     /// Add any serializable value to the context for a specify key. The value must represent a map object (key-value).
-    pub fn add_serialize<K: AsRef<str> + Into<String>, S: Serialize>(&mut self, key: K, value: S) -> Result<&mut Self, JSONGetTextBuilderError> {
+    pub fn add_serialize<K: AsRef<str> + Into<String>, S: Serialize>(&mut self, key: K, value: S) -> Result<&mut Self, JSONGetTextBuildError> {
         if self.context.contains_key(key.as_ref()) {
-            return Err(JSONGetTextBuilderError::DuplicatedKey(key.into()));
+            return Err(JSONGetTextBuildError::DuplicatedKey(key.into()));
         }
 
         let value: Value = serde_json::to_value(value)?;
@@ -147,9 +154,9 @@ impl<'a> JSONGetTextBuilder<'a> {
     }
 
     /// Add a map to the context.
-    pub fn add_map<K: AsRef<str> + Into<String>>(&mut self, key: K, map: HashMap<String, JSONGetTextValue<'a>>) -> Result<&mut Self, JSONGetTextBuilderError> {
+    pub fn add_map<K: AsRef<str> + Into<String>>(&mut self, key: K, map: HashMap<String, JSONGetTextValue<'a>>) -> Result<&mut Self, JSONGetTextBuildError> {
         if self.context.contains_key(key.as_ref()) {
-            return Err(JSONGetTextBuilderError::DuplicatedKey(key.into()));
+            return Err(JSONGetTextBuildError::DuplicatedKey(key.into()));
         }
 
         let key = key.into();
@@ -160,7 +167,7 @@ impl<'a> JSONGetTextBuilder<'a> {
     }
 
     /// Build a `JSONGetText` instance.
-    pub fn build(self) -> Result<JSONGetText<'a>, JSONGetTextError> {
+    pub fn build(self) -> Result<JSONGetText<'a>, JSONGetTextBuildError> {
         JSONGetText::from_context_with_default_key(self.default_key, self.context)
     }
 }

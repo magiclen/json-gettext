@@ -1,10 +1,20 @@
 use std::fmt::{self, Display, Formatter};
 use std::convert::{TryFrom, TryInto};
+#[cfg(feature = "rocketly")]
+use std::io::Cursor;
 
+#[cfg(feature = "rocketly")]
+use crate::rocket::response::{self, Response, Responder};
+#[cfg(feature = "rocketly")]
+use crate::rocket::request::{FromParam, FromFormValue, Request};
+#[cfg(feature = "rocketly")]
+use crate::rocket::http::RawStr;
 use crate::serde::{Serialize, Serializer, Deserialize, Deserializer};
 use crate::serde::de::{Visitor, Error as DeError, SeqAccess, MapAccess};
+#[cfg(feature = "rocketly")]
+use crate::serde_json::Error as JSONError;
 use crate::serde_json::{Value, Map, Number};
-use crate::serde_json::de::{ParserNumber};
+use crate::serde_json::de::ParserNumber;
 
 /// Represents any valid JSON value. Reference can also be wrapped.
 #[derive(Debug, Clone, PartialEq)]
@@ -526,5 +536,41 @@ impl TryFrom<Option<u128>> for JSONGetTextValue<'static> {
             Some(v) => v.try_into(),
             None => Ok(JSONGetTextValue::null())
         }
+    }
+}
+
+
+#[cfg(feature = "rocketly")]
+impl<'a> Responder<'a> for JSONGetTextValue<'a> {
+    fn respond_to(self, _: &Request) -> response::Result<'a> {
+        let mut response = Response::build();
+
+        response
+            .raw_header("Content-Type", "application/json")
+            .sized_body(Cursor::new(self.to_json()));
+
+        response.ok()
+    }
+}
+
+#[cfg(feature = "rocketly")]
+impl<'a> FromParam<'a> for JSONGetTextValue<'a> {
+    type Error = JSONError;
+
+    fn from_param(param: &'a RawStr) -> Result<Self, Self::Error> {
+        let value: Value = serde_json::from_str(param)?;
+
+        Ok(JSONGetTextValue::from_json_value(value))
+    }
+}
+
+#[cfg(feature = "rocketly")]
+impl<'a> FromFormValue<'a> for JSONGetTextValue<'a> {
+    type Error = JSONError;
+
+    fn from_form_value(form_value: &'a RawStr) -> Result<Self, Self::Error> {
+        let value: Value = serde_json::from_str(form_value)?;
+
+        Ok(JSONGetTextValue::from_json_value(value))
     }
 }

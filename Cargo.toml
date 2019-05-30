@@ -1,10 +1,10 @@
 [package]
 name = "json-gettext"
-version = "2.2.0"
+version = "3.0.0"
 authors = ["Magic Len <len@magiclen.org>"]
 repository = "https://github.com/magiclen/json-gettext"
 homepage = "https://magiclen.org/json-gettext"
-keywords = ["json", "i18n", "multi-language", "static"]
+keywords = ["json", "i18n", "multi-language", "static", "rocket"]
 categories = ["internationalization"]
 description= "A library for getting text from JSON usually for internationalization."
 readme = "README.md"
@@ -18,5 +18,10 @@ appveyor = { repository = "magiclen/json-gettext", branch = "master", service = 
 serde = "1.0.72"
 serde_json = "1.0.33"
 regex = "1"
+rocket = {version = "0.4", optional = true}
 
 [dev-dependencies]
+rocket = "0.4"
+
+[features]
+rocketly = ["rocket"]

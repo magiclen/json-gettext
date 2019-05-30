@@ -1,4 +1,4 @@
-/// Used for including json files into your executable binary file for building a JSONGetText instance.
+/// Used for including json files into your executable binary file for building a `JSONGetText` instance.
 ///
 /// ```
 /// #[macro_use] extern crate json_gettext;
@@ -63,6 +63,40 @@ macro_rules! get_text {
             )*
 
             $ctx.get_multiple_text_with_key($key, &text_array)
+        }
+    };
+}
+
+/// Used for including json files into your executable binary file for building a `JSONGetTextManager` instance. In order to reduce the compilation time and allow to hot-reload json data, files are compiled into your executable binary file together, only when you are using the **release** profile.
+#[cfg(all(debug_assertions, feature = "rocketly"))]
+#[macro_export]
+macro_rules! static_json_gettext_build_rocketly {
+    ( $default_key:expr, $($key:expr, $path:expr), * ) => {
+        {
+            let mut v = Vec::new();
+
+            $(
+                v.push(($key, $path));
+            )*
+
+            ($default_key ,v)
+        }
+    };
+}
+
+/// Used for including json files into your executable binary file for building a `JSONGetTextManager` instance. In order to reduce the compilation time and allow to hot-reload json data, files are compiled into your executable binary file together, only when you are using the **release** profile.
+#[cfg(all(not(debug_assertions), feature = "rocketly"))]
+#[macro_export]
+macro_rules! static_json_gettext_build_rocketly {
+    ( $default_key:expr, $($key:expr, $path:expr), * ) => {
+        {
+            let mut v = Vec::new();
+
+            $(
+                v.push(($key, include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", $path))));
+            )*
+
+            ($default_key ,v)
         }
     };
 }
