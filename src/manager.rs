@@ -87,7 +87,11 @@ impl JSONGetTextManager {
             let files = self.files.get_mut();
 
             for (_, (path, mtime)) in files.iter_mut() {
-                let metadata = path.metadata()?;
+                let metadata = path.metadata().map_err(|err| {
+                    self.reloading.store(false, Ordering::Relaxed);
+
+                    err
+                })?;
 
                 let (reload, new_mtime) = match mtime {
                     Some(mtime) => {
@@ -123,10 +127,18 @@ impl JSONGetTextManager {
                 let mut builder = JSONGetTextBuilder::new(self.get_default_key());
 
                 for (&key, (path, _)) in files {
-                    builder.add_json_file(key, path)?;
+                    builder.add_json_file(key, path).map_err(|err| {
+                        self.reloading.store(false, Ordering::Relaxed);
+
+                        err
+                    })?;
                 }
 
-                let json_gettext = builder.build()?;
+                let json_gettext = builder.build().map_err(|err| {
+                    self.reloading.store(false, Ordering::Relaxed);
+
+                    err
+                })?;
 
                 mem::replace(self.json_gettext.get_mut(), json_gettext);
             }
