@@ -2,7 +2,6 @@ JSON Get Text
 ====================
 
 [![Build Status](https://travis-ci.org/magiclen/json-gettext.svg?branch=master)](https://travis-ci.org/magiclen/json-gettext)
-[![Build status](https://ci.appveyor.com/api/projects/status/s62mpv7x0y54wycy/branch/master?svg=true)](https://ci.appveyor.com/project/magiclen/json-gettext/branch/master)
 
 This is a library for getting text from JSON usually for internationalization.
 

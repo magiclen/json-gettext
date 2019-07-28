@@ -1,6 +1,6 @@
 [package]
 name = "json-gettext"
-version = "3.1.0"
+version = "3.1.1"
 authors = ["Magic Len <len@magiclen.org>"]
 repository = "https://github.com/magiclen/json-gettext"
 homepage = "https://magiclen.org/json-gettext"
@@ -10,9 +10,9 @@ description= "A library for getting text from JSON usually for internationalizat
 readme = "README.md"
 license = "MIT"
 
-[badges]
-travis-ci = { repository = "magiclen/json-gettext", branch = "master" }
-appveyor = { repository = "magiclen/json-gettext", branch = "master", service = "github" }
+[badges.travis-ci]
+repository = "magiclen/json-gettext"
+branch = "master"
 
 [dependencies]
 serde = "1.0.72"
@@ -21,7 +21,7 @@ regex = "1"
 rocket = {version = "0.4", optional = true}
 
 [dev-dependencies]
-rocket = "0.4"
+rocket = "0.4.2"
 
 [features]
 rocketly = ["rocket"]
