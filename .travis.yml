@@ -10,20 +10,40 @@ os:
   - osx
   - windows
 
+env:
+  -
+  - RELEASE=1
+
+script:
+  - if [ "$RELEASE" = "1" ]; then RELEASE="--release"; else RELEASE=""; fi
+  - cargo test $RELEASE --verbose
+
 matrix:
   include:
     - rust: nightly
       os: linux
-      env: features="rocketly"
+      env: FEATURES="rocketly"
       script: cargo test --features "$FEATURES"
     - rust: nightly
       os: osx
-      env: features="rocketly"
+      env: FEATURES="rocketly"
       script: cargo test --features "$FEATURES"
     - rust: nightly
       os: windows
-      env: features="rocketly"
+      env: FEATURES="rocketly"
       script: cargo test --features "$FEATURES"
+    - rust: nightly
+      os: linux
+      env: FEATURES="rocketly" RELEASE=1
+      script: cargo test --release --features "$FEATURES"
+    - rust: nightly
+      os: osx
+      env: FEATURES="rocketly" RELEASE=1
+      script: cargo test --release --features "$FEATURES"
+    - rust: nightly
+      os: windows
+      env: FEATURES="rocketly" RELEASE=1
+      script: cargo test --release --features "$FEATURES"
     - rust: stable
       os: linux
       env: TARGET=x86_64-unknown-linux-musl
