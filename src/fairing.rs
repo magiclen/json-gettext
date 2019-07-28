@@ -13,7 +13,7 @@ const FAIRING_NAME: &'static str = "JSONGetText";
 
 /// The fairing of `JSONGetTextManager`.
 pub struct JSONGetTextFairing {
-    pub(crate) custom_callback: Box<Fn() -> (&'static str, Vec<(&'static str, &'static str)>) + Send + Sync + 'static>
+    pub(crate) custom_callback: Box<dyn Fn() -> (&'static str, Vec<(&'static str, &'static str)>) + Send + Sync + 'static>
 }
 
 impl Fairing for JSONGetTextFairing {
