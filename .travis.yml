@@ -13,8 +13,6 @@ os:
 env:
   -
   - RELEASE=1
-  - FEATURES="rocketly"
-  - RELEASE=1 FEATURES="rocketly"
 
 script:
   - if [ "$NO_DEFAULT_FEATURES" = "1" ]; then NO_DEFAULT_FEATURES="--no-default-features"; else NO_DEFAULT_FEATURES=""; fi
