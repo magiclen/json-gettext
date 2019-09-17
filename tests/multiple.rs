@@ -9,10 +9,14 @@ use json_gettext::JSONGetTextValue;
 
 #[test]
 fn multiple_get() {
-    let ctx = static_json_gettext_build!("en_US",
-            "en_US", "langs/en_US.json",
-            "zh_TW", "langs/zh_TW.json"
-        ).unwrap();
+    let ctx = static_json_gettext_build!(
+        "en_US",
+        "en_US",
+        "langs/en_US.json",
+        "zh_TW",
+        "langs/zh_TW.json"
+    )
+    .unwrap();
 
     let map_en: HashMap<&str, JSONGetTextValue> = get_text!(ctx, "en_US", "hello", "rust").unwrap();
 

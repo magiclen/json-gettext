@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use crate::{Context, JSONGetTextValue, JSONGetTextBuilder, JSONGetTextBuildError};
 use crate::regex::Regex;
+use crate::{Context, JSONGetTextBuildError, JSONGetTextBuilder, JSONGetTextValue};
 
 /// A wrapper for context and a default key. **Keys** are usually considered as locales.
 #[derive(Debug)]
@@ -18,7 +18,10 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Create a new JSONGetText instance with context and a default key.
-    pub(crate) fn from_context_with_default_key<S: AsRef<str> + Into<String>>(default_key: S, mut context: Context<'a>) -> Result<JSONGetText<'a>, JSONGetTextBuildError> {
+    pub(crate) fn from_context_with_default_key<S: AsRef<str> + Into<String>>(
+        default_key: S,
+        mut context: Context<'a>,
+    ) -> Result<JSONGetText<'a>, JSONGetTextBuildError> {
         if !context.contains_key(default_key.as_ref()) {
             return Err(JSONGetTextBuildError::DefaultKeyNotFound);
         }
@@ -90,7 +93,7 @@ impl<'a> JSONGetText<'a> {
     pub fn get<K: AsRef<str>>(&self, key: K) -> &HashMap<String, JSONGetTextValue<'a>> {
         match self.context.get(key.as_ref()) {
             Some(m) => m,
-            None => self.context.get(&self.default_key).unwrap()
+            None => self.context.get(&self.default_key).unwrap(),
         }
     }
 
@@ -104,14 +107,24 @@ impl<'a> JSONGetText<'a> {
 
     /// Get text from context with a specific key.
     #[inline]
-    pub fn get_text_with_key<K: AsRef<str>, T: AsRef<str>>(&'a self, key: K, text: T) -> Option<JSONGetTextValue<'a>> {
-        let map = self.context.get(key.as_ref()).unwrap_or(self.context.get(&self.default_key).unwrap());
+    pub fn get_text_with_key<K: AsRef<str>, T: AsRef<str>>(
+        &'a self,
+        key: K,
+        text: T,
+    ) -> Option<JSONGetTextValue<'a>> {
+        let map = self
+            .context
+            .get(key.as_ref())
+            .unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
 
         map.get(text.as_ref()).map(|v| v.clone_borrowed())
     }
 
     /// Get multiple text from context. The output map is usually used for serialization.
-    pub fn get_multiple_text<'b, T: AsRef<str> + ?Sized>(&self, text_array: &[&'b T]) -> Option<HashMap<&'b str, JSONGetTextValue>> {
+    pub fn get_multiple_text<'b, T: AsRef<str> + ?Sized>(
+        &self,
+        text_array: &[&'b T],
+    ) -> Option<HashMap<&'b str, JSONGetTextValue>> {
         let map = self.context.get(&self.default_key).unwrap();
 
         let mut new_map = HashMap::new();
@@ -126,8 +139,15 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Get multiple text from context with a specific key. The output map is usually used for serialization.
-    pub fn get_multiple_text_with_key<'b, K: AsRef<str>, T: AsRef<str> + ?Sized>(&'a self, key: K, text_array: &[&'b T]) -> Option<HashMap<&'b str, JSONGetTextValue<'a>>> {
-        let map = self.context.get(key.as_ref()).unwrap_or(self.context.get(&self.default_key).unwrap());
+    pub fn get_multiple_text_with_key<'b, K: AsRef<str>, T: AsRef<str> + ?Sized>(
+        &'a self,
+        key: K,
+        text_array: &[&'b T],
+    ) -> Option<HashMap<&'b str, JSONGetTextValue<'a>>> {
+        let map = self
+            .context
+            .get(key.as_ref())
+            .unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
 
         let mut new_map = HashMap::new();
 
@@ -141,7 +161,10 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Get filtered text from context by a Regex instance. The output map is usually used for serialization.
-    pub fn get_filtered_text(&'a self, regex: &Regex) -> Option<HashMap<&str, JSONGetTextValue<'a>>> {
+    pub fn get_filtered_text(
+        &'a self,
+        regex: &Regex,
+    ) -> Option<HashMap<&str, JSONGetTextValue<'a>>> {
         let map = self.context.get(&self.default_key).unwrap();
 
         let mut new_map = HashMap::new();
@@ -157,8 +180,15 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Get filtered text from context with a specific key by a Regex instance. The output map is usually used for serialization.
-    pub fn get_filtered_text_with_key<K: AsRef<str>>(&'a self, key: K, regex: &Regex) -> Option<HashMap<&str, JSONGetTextValue<'a>>> {
-        let map = self.context.get(key.as_ref()).unwrap_or(self.context.get(&self.default_key).unwrap());
+    pub fn get_filtered_text_with_key<K: AsRef<str>>(
+        &'a self,
+        key: K,
+        regex: &Regex,
+    ) -> Option<HashMap<&str, JSONGetTextValue<'a>>> {
+        let map = self
+            .context
+            .get(key.as_ref())
+            .unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
 
         let mut new_map = HashMap::new();
 

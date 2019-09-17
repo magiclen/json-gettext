@@ -1,15 +1,21 @@
-/// Used for including json files into your executable binary file for building a `JSONGetText` instance.
-///
-/// ```
-/// #[macro_use] extern crate json_gettext;
-///
-/// let ctx = static_json_gettext_build!("en_US",
-///         "en_US", "langs/en_US.json",
-///         "zh_TW", "langs/zh_TW.json"
-///     ).unwrap();
-///
-/// println!("{:?}", ctx);
-/// ```
+/**
+Used for including json files into your executable binary file for building a `JSONGetText` instance.
+
+```
+#[macro_use] extern crate json_gettext;
+
+let ctx = static_json_gettext_build!(
+    "en_US",
+    "en_US",
+    "langs/en_US.json",
+    "zh_TW",
+    "langs/zh_TW.json"
+)
+.unwrap();
+
+println!("{:?}", ctx);
+```
+**/
 #[macro_export]
 macro_rules! static_json_gettext_build {
     ( $default_key:expr, $($key:expr, $path:expr), * ) => {
@@ -27,19 +33,25 @@ macro_rules! static_json_gettext_build {
     };
 }
 
-/// Used for getting single or multiple text from context.
-///
-/// ```
-/// #[macro_use] extern crate json_gettext;
-///
-/// let ctx = static_json_gettext_build!("en_US",
-///         "en_US", "langs/en_US.json",
-///         "zh_TW", "langs/zh_TW.json"
-///     ).unwrap();
-///
-/// assert_eq!("Hello, world!", get_text!(ctx, "hello").unwrap());
-/// assert_eq!("哈囉，世界！", get_text!(ctx, "zh_TW", "hello").unwrap());
-/// ```
+/**
+Used for getting single or multiple text from context.
+
+```
+#[macro_use] extern crate json_gettext;
+
+let ctx = static_json_gettext_build!(
+    "en_US",
+    "en_US",
+    "langs/en_US.json",
+    "zh_TW",
+    "langs/zh_TW.json"
+)
+.unwrap();
+
+assert_eq!("Hello, world!", get_text!(ctx, "hello").unwrap());
+assert_eq!("哈囉，世界！", get_text!(ctx, "zh_TW", "hello").unwrap());
+```
+*/
 #[macro_export]
 macro_rules! get_text {
     ( $ctx:ident, $text:expr ) => {

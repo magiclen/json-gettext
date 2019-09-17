@@ -73,29 +73,29 @@ extern crate serde;
 #[cfg(feature = "rocketly")]
 extern crate rocket;
 
-#[cfg(all(debug_assertions, feature = "rocketly"))]
-mod mutate;
-mod json_gettext_value;
-mod json_gettext;
 mod builder;
 #[cfg(feature = "rocketly")]
-mod manager;
-#[cfg(feature = "rocketly")]
 mod fairing;
+mod json_gettext;
+mod json_gettext_value;
 mod macros;
+#[cfg(feature = "rocketly")]
+mod manager;
+#[cfg(all(debug_assertions, feature = "rocketly"))]
+mod mutate;
 
 use std::collections::HashMap;
 
 pub use serde_json::Value;
 
-#[cfg(all(debug_assertions, feature = "rocketly"))]
-use mutate::DebuggableMutate;
-pub use json_gettext_value::JSONGetTextValue;
-pub use json_gettext::JSONGetText;
-pub use builder::{JSONGetTextBuilder, JSONGetTextBuildError};
-#[cfg(feature = "rocketly")]
-pub use manager::JSONGetTextManager;
+pub use self::json_gettext::JSONGetText;
+pub use builder::{JSONGetTextBuildError, JSONGetTextBuilder};
 #[cfg(feature = "rocketly")]
 use fairing::JSONGetTextFairing;
+pub use json_gettext_value::JSONGetTextValue;
+#[cfg(feature = "rocketly")]
+pub use manager::JSONGetTextManager;
+#[cfg(all(debug_assertions, feature = "rocketly"))]
+use mutate::DebuggableMutate;
 
 pub type Context<'a> = HashMap<String, HashMap<String, JSONGetTextValue<'a>>>;

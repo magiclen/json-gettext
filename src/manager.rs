@@ -1,19 +1,19 @@
 #[cfg(debug_assertions)]
 use std::collections::HashMap;
 #[cfg(debug_assertions)]
-use std::path::{PathBuf, Path};
-#[cfg(debug_assertions)]
-use std::time::SystemTime;
+use std::mem;
 use std::ops::Deref;
 #[cfg(debug_assertions)]
-use std::sync::atomic::{Ordering, AtomicBool};
+use std::path::{Path, PathBuf};
 #[cfg(debug_assertions)]
-use std::mem;
+use std::sync::atomic::{AtomicBool, Ordering};
+#[cfg(debug_assertions)]
+use std::time::SystemTime;
 
 use crate::rocket::fairing::Fairing;
-use crate::{JSONGetTextBuilder, JSONGetText, JSONGetTextBuildError, JSONGetTextFairing};
 #[cfg(debug_assertions)]
 use crate::DebuggableMutate;
+use crate::{JSONGetText, JSONGetTextBuildError, JSONGetTextBuilder, JSONGetTextFairing};
 
 /// To monitor the state of `JSONGetText`.
 #[cfg(debug_assertions)]
@@ -29,12 +29,15 @@ pub struct JSONGetTextManager {
 #[cfg(not(debug_assertions))]
 #[derive(Debug)]
 pub struct JSONGetTextManager {
-    json_gettext: JSONGetText<'static>
+    json_gettext: JSONGetText<'static>,
 }
 
 impl JSONGetTextManager {
     #[cfg(debug_assertions)]
-    pub fn from_files(default_key: &'static str, source: Vec<(&'static str, &'static str)>) -> Result<JSONGetTextManager, JSONGetTextBuildError> {
+    pub fn from_files(
+        default_key: &'static str,
+        source: Vec<(&'static str, &'static str)>,
+    ) -> Result<JSONGetTextManager, JSONGetTextBuildError> {
         let mut builder = JSONGetTextBuilder::new(default_key);
 
         let mut files = HashMap::with_capacity(source.len());
@@ -65,7 +68,10 @@ impl JSONGetTextManager {
 
     #[cfg(not(debug_assertions))]
     #[inline]
-    pub fn from_jsons(default_key: &'static str, source: Vec<(&'static str, &'static str)>) -> Result<JSONGetTextManager, JSONGetTextBuildError> {
+    pub fn from_jsons(
+        default_key: &'static str,
+        source: Vec<(&'static str, &'static str)>,
+    ) -> Result<JSONGetTextManager, JSONGetTextBuildError> {
         let mut builder = JSONGetTextBuilder::new(default_key);
 
         for (key, json) in source {
@@ -96,22 +102,14 @@ impl JSONGetTextManager {
                 let (reload, new_mtime) = match mtime {
                     Some(mtime) => {
                         match metadata.modified() {
-                            Ok(new_mtime) => {
-                                (new_mtime > *mtime, Some(new_mtime))
-                            }
-                            Err(_) => {
-                                (true, None)
-                            }
+                            Ok(new_mtime) => (new_mtime > *mtime, Some(new_mtime)),
+                            Err(_) => (true, None),
                         }
                     }
                     None => {
                         match metadata.modified() {
-                            Ok(new_mtime) => {
-                                (true, Some(new_mtime))
-                            }
-                            Err(_) => {
-                                (true, None)
-                            }
+                            Ok(new_mtime) => (true, Some(new_mtime)),
+                            Err(_) => (true, None),
                         }
                     }
                 };
@@ -152,13 +150,14 @@ impl JSONGetTextManager {
 
 impl JSONGetTextManager {
     /// Create the fairing of `JSONGetTextManager`.
-    pub fn fairing<F>(f: F) -> impl Fairing where F: Fn() -> (&'static str, Vec<(&'static str, &'static str)>) + Send + Sync + 'static {
+    pub fn fairing<F>(f: F) -> impl Fairing
+    where
+        F: Fn() -> (&'static str, Vec<(&'static str, &'static str)>) + Send + Sync + 'static, {
         JSONGetTextFairing {
             custom_callback: Box::new(f),
         }
     }
 }
-
 
 #[cfg(debug_assertions)]
 impl<'a> Deref for JSONGetTextManager {

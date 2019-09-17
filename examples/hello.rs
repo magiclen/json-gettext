@@ -6,8 +6,8 @@ extern crate rocket;
 #[macro_use]
 extern crate json_gettext;
 
-use rocket::State;
 use rocket::response::Redirect;
+use rocket::State;
 
 use json_gettext::JSONGetTextManager;
 
@@ -24,9 +24,12 @@ fn hello(ctx: State<JSONGetTextManager>, lang: String) -> String {
 fn main() {
     rocket::ignite()
         .attach(JSONGetTextManager::fairing(|| {
-            static_json_gettext_build_rocketly!("en_US",
-                "en_US", "langs/en_US.json",
-                "zh_TW", "langs/zh_TW.json"
+            static_json_gettext_build_rocketly!(
+                "en_US",
+                "en_US",
+                "langs/en_US.json",
+                "zh_TW",
+                "langs/zh_TW.json"
             )
         }))
         .mount("/", routes![index, hello])

@@ -1,20 +1,21 @@
-use std::fmt::{self, Display, Formatter};
 use std::convert::{TryFrom, TryInto};
+use std::fmt::{self, Display, Formatter};
 #[cfg(feature = "rocketly")]
 use std::io::Cursor;
 
 #[cfg(feature = "rocketly")]
-use crate::rocket::response::{self, Response, Responder};
-#[cfg(feature = "rocketly")]
-use crate::rocket::request::{FromParam, FromFormValue, Request};
-#[cfg(feature = "rocketly")]
 use crate::rocket::http::RawStr;
-use crate::serde::{Serialize, Serializer, Deserialize, Deserializer};
-use crate::serde::de::{Visitor, Error as DeError, SeqAccess, MapAccess};
+#[cfg(feature = "rocketly")]
+use crate::rocket::request::{FromFormValue, FromParam, Request};
+#[cfg(feature = "rocketly")]
+use crate::rocket::response::{self, Responder, Response};
+use crate::serde::de::{Error as DeError, MapAccess, SeqAccess, Visitor};
+use crate::serde::{Deserialize, Deserializer, Serialize, Serializer};
+use crate::serde_json::de::ParserNumber;
 #[cfg(feature = "rocketly")]
 use crate::serde_json::Error as JSONError;
-use crate::serde_json::{Value, Map, Number};
-use crate::serde_json::de::ParserNumber;
+use crate::serde_json::{Map, Number, Value};
+use std::str::FromStr;
 
 /// Represents any valid JSON value. Reference can also be wrapped.
 #[derive(Debug, Clone, PartialEq)]
@@ -26,6 +27,7 @@ pub enum JSONGetTextValue<'a> {
 
 impl<'a> JSONGetTextValue<'a> {
     #[inline]
+    #[allow(clippy::should_implement_trait)]
     pub fn from_str<S: AsRef<str> + ?Sized>(s: &'a S) -> JSONGetTextValue<'a> {
         JSONGetTextValue::Str(s.as_ref())
     }
@@ -42,17 +44,17 @@ impl<'a> JSONGetTextValue<'a> {
 
     #[inline]
     pub fn from_i8(n: i8) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::I64(n as i64))))
+        JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::I64(i64::from(n)))))
     }
 
     #[inline]
     pub fn from_i16(n: i16) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::I64(n as i64))))
+        JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::I64(i64::from(n)))))
     }
 
     #[inline]
     pub fn from_i32(n: i32) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::I64(n as i64))))
+        JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::I64(i64::from(n)))))
     }
 
     #[inline]
@@ -62,12 +64,14 @@ impl<'a> JSONGetTextValue<'a> {
 
     #[inline]
     pub fn from_i128(n: i128) -> Result<JSONGetTextValue<'static>, String> {
-        if n > i64::max_value() as i128 {
+        if n > i128::from(i64::max_value()) {
             Err(format!("{} is bigger than {}.", n, i64::max_value()))
-        } else if n < i64::min_value() as i128 {
+        } else if n < i128::from(i64::min_value()) {
             Err(format!("{} is smaller than {}.", n, i64::min_value()))
         } else {
-            Ok(JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::I64(n as i64)))))
+            Ok(JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::I64(
+                n as i64,
+            )))))
         }
     }
 
@@ -78,17 +82,17 @@ impl<'a> JSONGetTextValue<'a> {
 
     #[inline]
     pub fn from_u8(n: u8) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::U64(n as u64))))
+        JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::U64(u64::from(n)))))
     }
 
     #[inline]
     pub fn from_u16(n: u16) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::U64(n as u64))))
+        JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::U64(u64::from(n)))))
     }
 
     #[inline]
     pub fn from_u32(n: u32) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::U64(n as u64))))
+        JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::U64(u64::from(n)))))
     }
 
     #[inline]
@@ -98,12 +102,14 @@ impl<'a> JSONGetTextValue<'a> {
 
     #[inline]
     pub fn from_u128(n: u128) -> Result<JSONGetTextValue<'static>, String> {
-        if n > u64::max_value() as u128 {
+        if n > u128::from(u64::max_value()) {
             Err(format!("{} is bigger than {}.", n, u64::max_value()))
-        } else if n < u64::min_value() as u128 {
+        } else if n < u128::from(u64::min_value()) {
             Err(format!("{} is smaller than {}.", n, u64::min_value()))
         } else {
-            Ok(JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::U64(n as u64)))))
+            Ok(JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::U64(
+                n as u64,
+            )))))
         }
     }
 
@@ -114,7 +120,7 @@ impl<'a> JSONGetTextValue<'a> {
 
     #[inline]
     pub fn from_f32(n: f32) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::F64(n as f64))))
+        JSONGetTextValue::JSONValue(Value::Number(Number::from(ParserNumber::F64(f64::from(n)))))
     }
 
     #[inline]
@@ -159,12 +165,8 @@ impl<'a> JSONGetTextValue<'a> {
 
                 string
             }
-            JSONGetTextValue::JSONValue(v) => {
-                v.to_string()
-            }
-            JSONGetTextValue::JSONValueRef(v) => {
-                v.to_string()
-            }
+            JSONGetTextValue::JSONValue(v) => v.to_string(),
+            JSONGetTextValue::JSONValueRef(v) => v.to_string(),
         }
     }
 
@@ -172,19 +174,17 @@ impl<'a> JSONGetTextValue<'a> {
     #[inline]
     pub fn as_str(&self) -> Option<&str> {
         match self {
-            JSONGetTextValue::Str(s) => {
-                Some(s)
-            }
+            JSONGetTextValue::Str(s) => Some(s),
             JSONGetTextValue::JSONValue(v) => {
                 match v {
                     Value::String(s) => Some(&s),
-                    _ => None
+                    _ => None,
                 }
             }
             JSONGetTextValue::JSONValueRef(v) => {
                 match v {
                     Value::String(s) => Some(&s),
-                    _ => None
+                    _ => None,
                 }
             }
         }
@@ -204,12 +204,12 @@ impl<'a> JSONGetTextValue<'a> {
 impl<'a> Serialize for JSONGetTextValue<'a> {
     #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer {
+    where
+        S: Serializer, {
         match self {
             JSONGetTextValue::Str(s) => s.serialize(serializer),
             JSONGetTextValue::JSONValue(v) => v.serialize(serializer),
-            JSONGetTextValue::JSONValueRef(v) => v.serialize(serializer)
+            JSONGetTextValue::JSONValueRef(v) => v.serialize(serializer),
         }
     }
 }
@@ -219,98 +219,108 @@ struct JSONGetTextValueVisitor;
 impl<'de> Visitor<'de> for JSONGetTextValueVisitor {
     type Value = JSONGetTextValue<'de>;
 
+    serde_if_integer128! {
+        #[inline]
+        fn visit_i128<E>(self, v: i128) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
+            Ok(JSONGetTextValue::from_i128(v).map_err(DeError::custom)?)
+        }
+    }
+
+    serde_if_integer128! {
+        #[inline]
+        fn visit_u128<E>(self, v: u128) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
+            Ok(JSONGetTextValue::from_u128(v).map_err(DeError::custom)?)
+        }
+    }
+
     #[inline]
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("a json value")
     }
 
     #[inline]
-    fn visit_bool<E>(self, v: bool) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
+    fn visit_bool<E>(self, v: bool) -> Result<JSONGetTextValue<'static>, E>
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_bool(v))
     }
 
     #[inline]
-    fn visit_i64<E>(self, v: i64) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
+    fn visit_i64<E>(self, v: i64) -> Result<JSONGetTextValue<'static>, E>
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_i64(v))
     }
 
-    serde_if_integer128! {
-        #[inline]
-        fn visit_i128<E>(self, v: i128) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
-            Ok(JSONGetTextValue::from_i128(v).map_err(|err| DeError::custom(err))?)
-        }
-    }
-
     #[inline]
-    fn visit_u64<E>(self, v: u64) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
+    fn visit_u64<E>(self, v: u64) -> Result<JSONGetTextValue<'static>, E>
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_u64(v))
     }
 
-    serde_if_integer128! {
-        #[inline]
-        fn visit_u128<E>(self, v: u128) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
-            Ok(JSONGetTextValue::from_u128(v).map_err(|err| DeError::custom(err))?)
-        }
-    }
-
     #[inline]
-    fn visit_f64<E>(self, v: f64) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
+    fn visit_f64<E>(self, v: f64) -> Result<JSONGetTextValue<'static>, E>
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_f64(v))
     }
 
     #[inline]
-    fn visit_str<E>(self, v: &str) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
+    fn visit_str<E>(self, v: &str) -> Result<JSONGetTextValue<'static>, E>
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_string(v.to_string()))
     }
 
     #[inline]
-    fn visit_borrowed_str<E>(self, v: &'de str) -> Result<JSONGetTextValue<'de>, E> where E: DeError {
+    fn visit_borrowed_str<E>(self, v: &'de str) -> Result<JSONGetTextValue<'de>, E>
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_str(v))
     }
 
     #[inline]
-    fn visit_string<E>(self, v: String) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
+    fn visit_string<E>(self, v: String) -> Result<JSONGetTextValue<'static>, E>
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_string(v))
     }
 
     #[inline]
-    fn visit_none<E>(self) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
+    fn visit_none<E>(self) -> Result<JSONGetTextValue<'static>, E>
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::null())
     }
 
     #[inline]
-    fn visit_seq<A>(self, mut seq: A) -> Result<JSONGetTextValue<'static>, A::Error> where A: SeqAccess<'de>,
-    {
+    fn visit_seq<A>(self, mut seq: A) -> Result<JSONGetTextValue<'static>, A::Error>
+    where
+        A: SeqAccess<'de>, {
         let mut v = match seq.size_hint() {
             Some(size) => Vec::with_capacity(size),
-            None => Vec::new()
+            None => Vec::new(),
         };
 
-        loop {
-            if let Some(e) = seq.next_element()? {
-                v.push(e);
-            } else {
-                break;
-            }
+        while let Some(e) = seq.next_element()? {
+            v.push(e);
         }
 
         Ok(JSONGetTextValue::from_json_value(Value::Array(v)))
     }
 
     #[inline]
-    fn visit_map<A>(self, mut map: A) -> Result<JSONGetTextValue<'static>, A::Error> where A: MapAccess<'de>,
-    {
+    fn visit_map<A>(self, mut map: A) -> Result<JSONGetTextValue<'static>, A::Error>
+    where
+        A: MapAccess<'de>, {
         let mut v = match map.size_hint() {
             Some(size) => Map::with_capacity(size),
-            None => Map::new()
+            None => Map::new(),
         };
 
-        loop {
-            if let Some((k, e)) = map.next_entry()? {
-                v.insert(k, e);
-            } else {
-                break;
-            }
+        while let Some((k, e)) = map.next_entry()? {
+            v.insert(k, e);
         }
 
         Ok(JSONGetTextValue::from_json_value(Value::Object(v)))
@@ -319,7 +329,9 @@ impl<'de> Visitor<'de> for JSONGetTextValueVisitor {
 
 impl<'de> Deserialize<'de> for JSONGetTextValue<'de> {
     #[inline]
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>, {
         deserializer.deserialize_str(JSONGetTextValueVisitor)
     }
 }
@@ -330,7 +342,7 @@ impl<'a> PartialEq<JSONGetTextValue<'a>> for str {
         match other {
             JSONGetTextValue::Str(s) => s.eq(&self),
             JSONGetTextValue::JSONValue(v) => v.eq(self),
-            JSONGetTextValue::JSONValueRef(v) => v.eq(&self)
+            JSONGetTextValue::JSONValueRef(v) => v.eq(&self),
         }
     }
 }
@@ -341,7 +353,7 @@ impl<'a> PartialEq<JSONGetTextValue<'a>> for &'a str {
         match other {
             JSONGetTextValue::Str(s) => s.eq(self),
             JSONGetTextValue::JSONValue(v) => v.eq(self),
-            JSONGetTextValue::JSONValueRef(v) => v.eq(self)
+            JSONGetTextValue::JSONValueRef(v) => v.eq(self),
         }
     }
 }
@@ -354,13 +366,13 @@ impl<'a> Display for JSONGetTextValue<'a> {
             JSONGetTextValue::JSONValue(v) => {
                 match v.as_str() {
                     Some(s) => s.fmt(f),
-                    None => v.fmt(f)
+                    None => v.fmt(f),
                 }
             }
             JSONGetTextValue::JSONValueRef(v) => {
                 match v.as_str() {
                     Some(s) => s.fmt(f),
-                    None => v.fmt(f)
+                    None => v.fmt(f),
                 }
             }
         }
@@ -431,7 +443,6 @@ impl TryFrom<i128> for JSONGetTextValue<'static> {
         JSONGetTextValue::from_i128(v)
     }
 }
-
 
 impl From<u8> for JSONGetTextValue<'static> {
     #[inline]
@@ -510,7 +521,7 @@ impl<'a, T: Into<JSONGetTextValue<'a>>> From<Option<T>> for JSONGetTextValue<'a>
     fn from(v: Option<T>) -> JSONGetTextValue<'a> {
         match v {
             Some(v) => v.into(),
-            None => JSONGetTextValue::null()
+            None => JSONGetTextValue::null(),
         }
     }
 }
@@ -522,7 +533,7 @@ impl TryFrom<Option<i128>> for JSONGetTextValue<'static> {
     fn try_from(v: Option<i128>) -> Result<JSONGetTextValue<'static>, String> {
         match v {
             Some(v) => v.try_into(),
-            None => Ok(JSONGetTextValue::null())
+            None => Ok(JSONGetTextValue::null()),
         }
     }
 }
@@ -534,11 +545,19 @@ impl TryFrom<Option<u128>> for JSONGetTextValue<'static> {
     fn try_from(v: Option<u128>) -> Result<JSONGetTextValue<'static>, String> {
         match v {
             Some(v) => v.try_into(),
-            None => Ok(JSONGetTextValue::null())
+            None => Ok(JSONGetTextValue::null()),
         }
     }
 }
 
+impl FromStr for JSONGetTextValue<'static> {
+    type Err = ();
+
+    #[inline]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(JSONGetTextValue::from_string(s))
+    }
+}
 
 #[cfg(feature = "rocketly")]
 impl<'a> Responder<'a> for JSONGetTextValue<'a> {

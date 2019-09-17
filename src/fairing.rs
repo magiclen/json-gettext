@@ -1,19 +1,21 @@
+#[cfg(debug_assertions)]
+use crate::rocket::data::Data;
+use crate::rocket::fairing::{Fairing, Info, Kind};
+#[cfg(debug_assertions)]
+use crate::rocket::request::Request;
 use crate::rocket::Rocket;
 #[cfg(debug_assertions)]
 use crate::rocket::State;
-#[cfg(debug_assertions)]
-use crate::rocket::request::Request;
-use crate::rocket::fairing::{Fairing, Info, Kind};
-#[cfg(debug_assertions)]
-use crate::rocket::data::Data;
 
 use crate::JSONGetTextManager;
 
-const FAIRING_NAME: &'static str = "JSONGetText";
+const FAIRING_NAME: &str = "JSONGetText";
 
 /// The fairing of `JSONGetTextManager`.
+#[allow(clippy::type_complexity)]
 pub struct JSONGetTextFairing {
-    pub(crate) custom_callback: Box<dyn Fn() -> (&'static str, Vec<(&'static str, &'static str)>) + Send + Sync + 'static>
+    pub(crate) custom_callback:
+        Box<dyn Fn() -> (&'static str, Vec<(&'static str, &'static str)>) + Send + Sync + 'static>,
 }
 
 impl Fairing for JSONGetTextFairing {
@@ -53,7 +55,9 @@ impl Fairing for JSONGetTextFairing {
 
     #[cfg(debug_assertions)]
     fn on_request(&self, req: &mut Request, _data: &Data) {
-        let ctx = req.guard::<State<JSONGetTextManager>>().expect("JSONGetTextManager registered in on_attach");
+        let ctx = req
+            .guard::<State<JSONGetTextManager>>()
+            .expect("JSONGetTextManager registered in on_attach");
 
         ctx.reload_if_needed().unwrap();
     }

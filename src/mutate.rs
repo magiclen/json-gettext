@@ -1,6 +1,6 @@
-use std::ops::{Deref, DerefMut};
 use std::cell::UnsafeCell;
 use std::fmt::Debug;
+use std::ops::{Deref, DerefMut};
 
 #[derive(Debug)]
 pub struct DebuggableMutate<T: Debug> {
@@ -19,16 +19,13 @@ impl<T: Debug> DebuggableMutate<T> {
 
     #[inline]
     pub fn get(&self) -> &T {
-        unsafe {
-            &*self.data.get()
-        }
+        unsafe { &*self.data.get() }
     }
 
     #[inline]
+    #[allow(clippy::mut_from_ref)]
     pub fn get_mut(&self) -> &mut T {
-        unsafe {
-            &mut *self.data.get()
-        }
+        unsafe { &mut *self.data.get() }
     }
 }
 
