@@ -67,6 +67,7 @@ If you are not using the `release` profile, `JSONGetTextManager` can reload the 
 */
 
 pub extern crate regex;
+#[macro_use]
 pub extern crate serde_json;
 #[macro_use]
 extern crate serde;
