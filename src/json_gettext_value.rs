@@ -199,8 +199,8 @@ impl<'a> JSONGetTextValue<'a> {
 impl<'a> Serialize for JSONGetTextValue<'a> {
     #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer, {
+    where
+        S: Serializer, {
         match self {
             JSONGetTextValue::Str(s) => s.serialize(serializer),
             JSONGetTextValue::JSONValue(v) => v.serialize(serializer),
@@ -235,64 +235,64 @@ impl<'de> Visitor<'de> for JSONGetTextValueVisitor {
 
     #[inline]
     fn visit_bool<E>(self, v: bool) -> Result<JSONGetTextValue<'static>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_bool(v))
     }
 
     #[inline]
     fn visit_i64<E>(self, v: i64) -> Result<JSONGetTextValue<'static>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_i64(v))
     }
 
     #[inline]
     fn visit_u64<E>(self, v: u64) -> Result<JSONGetTextValue<'static>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_u64(v))
     }
 
     #[inline]
     fn visit_f64<E>(self, v: f64) -> Result<JSONGetTextValue<'static>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_f64(v))
     }
 
     #[inline]
     fn visit_str<E>(self, v: &str) -> Result<JSONGetTextValue<'static>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_string(v.to_string()))
     }
 
     #[inline]
     fn visit_borrowed_str<E>(self, v: &'de str) -> Result<JSONGetTextValue<'de>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_str(v))
     }
 
     #[inline]
     fn visit_string<E>(self, v: String) -> Result<JSONGetTextValue<'static>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_string(v))
     }
 
     #[inline]
     fn visit_none<E>(self) -> Result<JSONGetTextValue<'static>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::null())
     }
 
     #[inline]
     fn visit_seq<A>(self, mut seq: A) -> Result<JSONGetTextValue<'static>, A::Error>
-        where
-            A: SeqAccess<'de>, {
+    where
+        A: SeqAccess<'de>, {
         let mut v = match seq.size_hint() {
             Some(size) => Vec::with_capacity(size),
             None => Vec::new(),
@@ -307,8 +307,8 @@ impl<'de> Visitor<'de> for JSONGetTextValueVisitor {
 
     #[inline]
     fn visit_map<A>(self, mut map: A) -> Result<JSONGetTextValue<'static>, A::Error>
-        where
-            A: MapAccess<'de>, {
+    where
+        A: MapAccess<'de>, {
         let mut v = match map.size_hint() {
             Some(size) => Map::with_capacity(size),
             None => Map::new(),
@@ -325,8 +325,8 @@ impl<'de> Visitor<'de> for JSONGetTextValueVisitor {
 impl<'de> Deserialize<'de> for JSONGetTextValue<'de> {
     #[inline]
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>, {
+    where
+        D: Deserializer<'de>, {
         deserializer.deserialize_str(JSONGetTextValueVisitor)
     }
 }

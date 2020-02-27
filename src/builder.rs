@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::error::Error;
+use std::fmt::{Display, Error as FmtError, Formatter};
 use std::fs::File;
 use std::io;
 use std::path::Path;
@@ -20,25 +22,30 @@ pub enum JSONGetTextBuildError {
     SerdeJSONError(JSONError),
 }
 
-impl ToString for JSONGetTextBuildError {
+impl Display for JSONGetTextBuildError {
     #[inline]
-    fn to_string(&self) -> String {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         match self {
             JSONGetTextBuildError::DefaultKeyNotFound => {
-                "The default key is not found.".to_string()
+                f.write_str("The default key is not found.")
             }
             JSONGetTextBuildError::TextInKeyNotInDefaultKey {
                 key,
                 text,
             } => {
-                format!("The text `{}` in the key `{}` is not found in the default key.", text, key)
+                f.write_fmt(format_args!(
+                    "The text `{}` in the key `{}` is not found in the default key.",
+                    text, key
+                ))
             }
-            JSONGetTextBuildError::DuplicatedKey(s) => s.clone(),
-            JSONGetTextBuildError::IOError(err) => err.to_string(),
-            JSONGetTextBuildError::SerdeJSONError(err) => err.to_string(),
+            JSONGetTextBuildError::DuplicatedKey(s) => f.write_str(s),
+            JSONGetTextBuildError::IOError(err) => Display::fmt(err, f),
+            JSONGetTextBuildError::SerdeJSONError(err) => Display::fmt(err, f),
         }
     }
 }
+
+impl Error for JSONGetTextBuildError {}
 
 impl From<io::Error> for JSONGetTextBuildError {
     #[inline]
