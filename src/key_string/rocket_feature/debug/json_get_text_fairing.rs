@@ -1,13 +1,11 @@
-#[cfg(debug_assertions)]
-use crate::rocket::data::Data;
-use crate::rocket::fairing::{Fairing, Info, Kind};
-#[cfg(debug_assertions)]
-use crate::rocket::request::Request;
-use crate::rocket::Rocket;
-#[cfg(debug_assertions)]
-use crate::rocket::State;
+extern crate rocket;
 
-use crate::JSONGetTextManager;
+use super::JSONGetTextManager;
+
+use rocket::data::Data;
+use rocket::fairing::{Fairing, Info, Kind};
+use rocket::request::Request;
+use rocket::{Rocket, State};
 
 const FAIRING_NAME: &str = "JSONGetText";
 
@@ -19,7 +17,7 @@ pub struct JSONGetTextFairing {
 }
 
 impl Fairing for JSONGetTextFairing {
-    #[cfg(debug_assertions)]
+    #[inline]
     fn info(&self) -> Info {
         Info {
             name: FAIRING_NAME,
@@ -27,15 +25,7 @@ impl Fairing for JSONGetTextFairing {
         }
     }
 
-    #[cfg(not(debug_assertions))]
-    fn info(&self) -> Info {
-        Info {
-            name: FAIRING_NAME,
-            kind: Kind::Attach,
-        }
-    }
-
-    #[cfg(debug_assertions)]
+    #[inline]
     fn on_attach(&self, rocket: Rocket) -> Result<Rocket, Rocket> {
         let (default_key, source) = (self.custom_callback)();
 
@@ -44,16 +34,7 @@ impl Fairing for JSONGetTextFairing {
         Ok(rocket.manage(state))
     }
 
-    #[cfg(not(debug_assertions))]
-    fn on_attach(&self, rocket: Rocket) -> Result<Rocket, Rocket> {
-        let (default_key, source) = (self.custom_callback)();
-
-        let state = JSONGetTextManager::from_jsons(default_key, source).unwrap();
-
-        Ok(rocket.manage(state))
-    }
-
-    #[cfg(debug_assertions)]
+    #[inline]
     fn on_request(&self, req: &mut Request, _data: &Data) {
         let ctx = req
             .guard::<State<JSONGetTextManager>>()

@@ -1,65 +1,15 @@
+extern crate serde;
+
+use serde::Serialize;
+
 use std::collections::HashMap;
-use std::error::Error;
-use std::fmt::{Display, Error as FmtError, Formatter};
 use std::fs::File;
-use std::io;
 use std::path::Path;
 
-use crate::serde::Serialize;
-use crate::serde_json::{Error as JSONError, Map, Value};
+use crate::serde_json::{Map, Value};
+use crate::JSONGetTextBuildError;
 
-use crate::{Context, JSONGetText, JSONGetTextValue};
-
-#[derive(Debug)]
-pub enum JSONGetTextBuildError {
-    DefaultKeyNotFound,
-    TextInKeyNotInDefaultKey {
-        key: String,
-        text: String,
-    },
-    DuplicatedKey(String),
-    IOError(io::Error),
-    SerdeJSONError(JSONError),
-}
-
-impl Display for JSONGetTextBuildError {
-    #[inline]
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        match self {
-            JSONGetTextBuildError::DefaultKeyNotFound => {
-                f.write_str("The default key is not found.")
-            }
-            JSONGetTextBuildError::TextInKeyNotInDefaultKey {
-                key,
-                text,
-            } => {
-                f.write_fmt(format_args!(
-                    "The text `{}` in the key `{}` is not found in the default key.",
-                    text, key
-                ))
-            }
-            JSONGetTextBuildError::DuplicatedKey(s) => f.write_str(s),
-            JSONGetTextBuildError::IOError(err) => Display::fmt(err, f),
-            JSONGetTextBuildError::SerdeJSONError(err) => Display::fmt(err, f),
-        }
-    }
-}
-
-impl Error for JSONGetTextBuildError {}
-
-impl From<io::Error> for JSONGetTextBuildError {
-    #[inline]
-    fn from(v: io::Error) -> JSONGetTextBuildError {
-        JSONGetTextBuildError::IOError(v)
-    }
-}
-
-impl From<JSONError> for JSONGetTextBuildError {
-    #[inline]
-    fn from(v: JSONError) -> JSONGetTextBuildError {
-        JSONGetTextBuildError::SerdeJSONError(v)
-    }
-}
+use super::{Context, JSONGetText, JSONGetTextValue};
 
 /// To build a JSONGetText instance, this struct can help you do that step by step.
 #[derive(Debug, Clone)]

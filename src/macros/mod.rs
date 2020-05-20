@@ -1,7 +1,10 @@
+#[cfg(feature = "rocketly")]
+mod rocket_feature;
+
 /**
 Used for including json files into your executable binary file for building a `JSONGetText` instance.
 
-```
+```ignore
 #[macro_use] extern crate json_gettext;
 
 let ctx = static_json_gettext_build!(
@@ -20,9 +23,7 @@ println!("{:?}", ctx);
 macro_rules! static_json_gettext_build {
     ( $default_key:expr, $($key:expr, $path:expr), * ) => {
         {
-            use crate::json_gettext::JSONGetText;
-
-            let mut builder = JSONGetText::build($default_key);
+            let mut builder = $crate::JSONGetText::build($default_key);
 
             $(
                 builder.add_json($key, include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", $path))).unwrap();
@@ -36,7 +37,7 @@ macro_rules! static_json_gettext_build {
 /**
 Used for getting single or multiple text from context.
 
-```
+```ignore
 #[macro_use] extern crate json_gettext;
 
 let ctx = static_json_gettext_build!(
@@ -75,40 +76,6 @@ macro_rules! get_text {
             )*
 
             $ctx.get_multiple_text_with_key($key, &text_array)
-        }
-    };
-}
-
-/// Used for including json files into your executable binary file for building a `JSONGetTextManager` instance. In order to reduce the compilation time and allow to hot-reload json data, files are compiled into your executable binary file together, only when you are using the **release** profile.
-#[cfg(all(debug_assertions, feature = "rocketly"))]
-#[macro_export]
-macro_rules! static_json_gettext_build_rocketly {
-    ( $default_key:expr, $($key:expr, $path:expr), * ) => {
-        {
-            let mut v = Vec::new();
-
-            $(
-                v.push(($key, $path));
-            )*
-
-            ($default_key ,v)
-        }
-    };
-}
-
-/// Used for including json files into your executable binary file for building a `JSONGetTextManager` instance. In order to reduce the compilation time and allow to hot-reload json data, files are compiled into your executable binary file together, only when you are using the **release** profile.
-#[cfg(all(not(debug_assertions), feature = "rocketly"))]
-#[macro_export]
-macro_rules! static_json_gettext_build_rocketly {
-    ( $default_key:expr, $($key:expr, $path:expr), * ) => {
-        {
-            let mut v = Vec::new();
-
-            $(
-                v.push(($key, include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", $path))));
-            )*
-
-            ($default_key ,v)
         }
     };
 }

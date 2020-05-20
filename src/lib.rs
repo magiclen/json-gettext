@@ -5,7 +5,7 @@ This is a library for getting text from JSON usually for internationalization.
 
 ## Example
 
-```rust
+```rust,ignore
 #[macro_use] extern crate json_gettext;
 
 let ctx = static_json_gettext_build!(
@@ -15,7 +15,7 @@ let ctx = static_json_gettext_build!(
 ).unwrap();
 
 assert_eq!("Hello, world!", get_text!(ctx, "hello").unwrap());
-assert_eq!("哈囉，世界！", get_text!(ctx, "zh_TW", "hello").unwrap());
+assert_eq!("哈囉，世界！", get_text!(ctx,  "zh_TW", "hello").unwrap());
 ```
 
 ## Rocket Support
@@ -64,39 +64,95 @@ fn main() {
 ```
 
 If you are not using the `release` profile, `JSONGetTextManager` can reload the json files automatically if needed.
-*/
 
-pub extern crate regex;
+## `unic-langid` Support
+
+Since string comparison could be slow, the `language_region_pair` feature, the `language` feature or the `region` feature can be enabled to change key's type to `(Language, Option<Region>)`, `Language` or `Region` respectively where `Language` and `Region` structs are in the `unic-langid` crate.
+
+In this case, the `key!` macro would be useful for generating a `Key` instance from a literal string.
+
+For example,
+
+```toml
+[dependencies.json-gettext]
+version = "*"
+features = ["language_region_pair", "rocketly"]
+```
+
+```rust,ignore
+#![feature(proc_macro_hygiene, decl_macro)]
+
 #[macro_use]
-pub extern crate serde_json;
-#[macro_use]
-extern crate serde;
-#[cfg(feature = "rocketly")]
 extern crate rocket;
 
-mod builder;
-#[cfg(feature = "rocketly")]
-mod fairing;
-mod json_gettext;
-mod json_gettext_value;
+#[macro_use]
+extern crate rocket_accept_language;
+
+#[macro_use]
+extern crate json_gettext;
+
+use rocket::State;
+
+use rocket_accept_language::unic_langid::subtags::Language;
+use rocket_accept_language::AcceptLanguage;
+
+use json_gettext::{JSONGetTextManager, Key};
+
+const LANGUAGE_EN: Language = language!("en");
+
+#[get("/")]
+fn index(ctx: State<JSONGetTextManager>, accept_language: &AcceptLanguage) -> String {
+    let (language, region) = accept_language.get_first_language_region().unwrap_or((LANGUAGE_EN, None));
+
+    format!("Ron: {}", get_text!(ctx, Key(language, region), "hello").unwrap().as_str().unwrap())
+}
+
+fn main() {
+    rocket::ignite()
+        .attach(JSONGetTextManager::fairing(|| {
+            static_json_gettext_build_rocketly!(
+                key!("en"),
+                key!("en"),
+                "langs/en_US.json",
+                key!("zh_TW"),
+                "langs/zh_TW.json"
+            )
+        }))
+        .mount("/", routes![index])
+        .launch();
+}
+```
+*/
+
+pub extern crate serde_json;
+
+#[cfg(feature = "langid")]
+pub extern crate unic_langid;
+
+#[cfg(feature = "langid")]
+pub extern crate unic_langid_macros;
+
+mod json_get_text_build_errors;
 mod macros;
-#[cfg(feature = "rocketly")]
-mod manager;
+mod value;
+
 #[cfg(all(debug_assertions, feature = "rocketly"))]
 mod mutate;
 
-use std::collections::HashMap;
+#[cfg(feature = "langid")]
+mod key_copy;
 
-pub use serde_json::Value;
+#[cfg(not(feature = "langid"))]
+mod key_string;
 
-pub use self::json_gettext::JSONGetText;
-pub use builder::{JSONGetTextBuildError, JSONGetTextBuilder};
-#[cfg(feature = "rocketly")]
-use fairing::JSONGetTextFairing;
-pub use json_gettext_value::JSONGetTextValue;
-#[cfg(feature = "rocketly")]
-pub use manager::JSONGetTextManager;
+pub use json_get_text_build_errors::*;
+pub use value::*;
+
 #[cfg(all(debug_assertions, feature = "rocketly"))]
 use mutate::DebuggableMutate;
 
-pub type Context<'a> = HashMap<String, HashMap<String, JSONGetTextValue<'a>>>;
+#[cfg(feature = "langid")]
+pub use key_copy::*;
+
+#[cfg(not(feature = "langid"))]
+pub use key_string::*;

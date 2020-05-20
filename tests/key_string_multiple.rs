@@ -1,3 +1,5 @@
+#![cfg(not(feature = "langid"))]
+
 #[macro_use]
 extern crate json_gettext;
 

@@ -1,22 +1,18 @@
-#[cfg(debug_assertions)]
+extern crate rocket;
+
 use std::collections::HashMap;
-#[cfg(debug_assertions)]
 use std::mem;
 use std::ops::Deref;
-#[cfg(debug_assertions)]
 use std::path::{Path, PathBuf};
-#[cfg(debug_assertions)]
 use std::sync::atomic::{AtomicBool, Ordering};
-#[cfg(debug_assertions)]
 use std::time::SystemTime;
 
-use crate::rocket::fairing::Fairing;
-#[cfg(debug_assertions)]
-use crate::DebuggableMutate;
-use crate::{JSONGetText, JSONGetTextBuildError, JSONGetTextBuilder, JSONGetTextFairing};
+use crate::{
+    DebuggableMutate, JSONGetText, JSONGetTextBuildError, JSONGetTextBuilder, JSONGetTextFairing,
+};
 
-/// To monitor the state of `JSONGetText`.
-#[cfg(debug_assertions)]
+use rocket::fairing::Fairing;
+
 #[derive(Debug)]
 pub struct JSONGetTextManager {
     empty: JSONGetText<'static>,
@@ -25,15 +21,7 @@ pub struct JSONGetTextManager {
     reloading: AtomicBool,
 }
 
-/// To monitor the state of `JSONGetText`.
-#[cfg(not(debug_assertions))]
-#[derive(Debug)]
-pub struct JSONGetTextManager {
-    json_gettext: JSONGetText<'static>,
-}
-
 impl JSONGetTextManager {
-    #[cfg(debug_assertions)]
     pub fn from_files(
         default_key: &'static str,
         source: Vec<(&'static str, &'static str)>,
@@ -66,26 +54,6 @@ impl JSONGetTextManager {
         })
     }
 
-    #[cfg(not(debug_assertions))]
-    #[inline]
-    pub fn from_jsons(
-        default_key: &'static str,
-        source: Vec<(&'static str, &'static str)>,
-    ) -> Result<JSONGetTextManager, JSONGetTextBuildError> {
-        let mut builder = JSONGetTextBuilder::new(default_key);
-
-        for (key, json) in source {
-            builder.add_json(key, json)?;
-        }
-
-        Ok(JSONGetTextManager {
-            json_gettext: builder.build()?,
-        })
-    }
-}
-
-#[cfg(debug_assertions)]
-impl JSONGetTextManager {
     pub fn reload_if_needed(&self) -> Result<(), JSONGetTextBuildError> {
         if !self.reloading.compare_and_swap(false, true, Ordering::Relaxed) {
             let mut do_reload = false;
@@ -138,7 +106,7 @@ impl JSONGetTextManager {
                     err
                 })?;
 
-                mem::replace(self.json_gettext.get_mut(), json_gettext);
+                drop(mem::replace(self.json_gettext.get_mut(), json_gettext));
             }
 
             self.reloading.store(false, Ordering::Relaxed);
@@ -159,7 +127,6 @@ impl JSONGetTextManager {
     }
 }
 
-#[cfg(debug_assertions)]
 impl<'a> Deref for JSONGetTextManager {
     type Target = JSONGetText<'static>;
 
@@ -171,15 +138,5 @@ impl<'a> Deref for JSONGetTextManager {
         } else {
             self.json_gettext.get()
         }
-    }
-}
-
-#[cfg(not(debug_assertions))]
-impl<'a> Deref for JSONGetTextManager {
-    type Target = JSONGetText<'static>;
-
-    #[inline]
-    fn deref(&self) -> &JSONGetText<'static> {
-        &self.json_gettext
     }
 }

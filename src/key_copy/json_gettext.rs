@@ -1,32 +1,35 @@
+extern crate regex;
+
 use std::collections::HashMap;
 
-use crate::regex::Regex;
-use crate::{Context, JSONGetTextBuildError, JSONGetTextBuilder, JSONGetTextValue};
+use crate::{JSONGetTextBuildError, JSONGetTextValue};
+
+use super::{Context, JSONGetTextBuilder, Key};
+
+use regex::Regex;
 
 /// A wrapper for context and a default key. **Keys** are usually considered as locales.
 #[derive(Debug)]
 pub struct JSONGetText<'a> {
-    default_key: String,
+    default_key: Key,
     context: Context<'a>,
 }
 
 impl<'a> JSONGetText<'a> {
     /// Create a new `JSONGetTextBuilder` instance. You need to decide your default key at the stage.
     #[inline]
-    pub fn build<S: Into<String>>(default_key: S) -> JSONGetTextBuilder<'a> {
+    pub fn build(default_key: Key) -> JSONGetTextBuilder<'a> {
         JSONGetTextBuilder::new(default_key)
     }
 
     /// Create a new JSONGetText instance with context and a default key.
-    pub(crate) fn from_context_with_default_key<S: AsRef<str> + Into<String>>(
-        default_key: S,
+    pub(crate) fn from_context_with_default_key(
+        default_key: Key,
         mut context: Context<'a>,
     ) -> Result<JSONGetText<'a>, JSONGetTextBuildError> {
-        if !context.contains_key(default_key.as_ref()) {
+        if !context.contains_key(&default_key) {
             return Err(JSONGetTextBuildError::DefaultKeyNotFound);
         }
-
-        let default_key = default_key.into();
 
         let default_map = context.remove(&default_key).unwrap();
 
@@ -56,7 +59,7 @@ impl<'a> JSONGetText<'a> {
                 inner_context.insert(key, map);
             }
 
-            inner_context.insert(default_key.clone(), default_map);
+            inner_context.insert(default_key, default_map);
         }
 
         Ok(JSONGetText {
@@ -66,32 +69,26 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Get all keys in context.
-    pub fn get_keys(&self) -> Vec<&str> {
-        let mut vec = Vec::with_capacity(self.context.len());
-
-        for key in self.context.keys() {
-            vec.push(key.as_str());
-        }
-
-        vec
+    pub fn get_keys(&self) -> Vec<Key> {
+        self.context.keys().copied().collect()
     }
 
     /// Returns `true` if the context contains a value for the specified key.
     #[inline]
-    pub fn contains_key<K: AsRef<str>>(&self, key: K) -> bool {
-        self.context.contains_key(key.as_ref())
+    pub fn contains_key(&self, key: Key) -> bool {
+        self.context.contains_key(&key)
     }
 
     /// Get the default key.
     #[inline]
-    pub fn get_default_key(&self) -> &str {
-        &self.default_key
+    pub fn get_default_key(&self) -> Key {
+        self.default_key
     }
 
     /// Get a string map from context by a key.
     #[inline]
-    pub fn get<K: AsRef<str>>(&self, key: K) -> &HashMap<String, JSONGetTextValue<'a>> {
-        match self.context.get(key.as_ref()) {
+    pub fn get(&self, key: Key) -> &HashMap<String, JSONGetTextValue<'a>> {
+        match self.context.get(&key) {
             Some(m) => m,
             None => self.context.get(&self.default_key).unwrap(),
         }
@@ -107,15 +104,13 @@ impl<'a> JSONGetText<'a> {
 
     /// Get text from context with a specific key.
     #[inline]
-    pub fn get_text_with_key<K: AsRef<str>, T: AsRef<str>>(
+    pub fn get_text_with_key<T: AsRef<str>>(
         &'a self,
-        key: K,
+        key: Key,
         text: T,
     ) -> Option<JSONGetTextValue<'a>> {
-        let map = self
-            .context
-            .get(key.as_ref())
-            .unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
+        let map =
+            self.context.get(&key).unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
 
         map.get(text.as_ref()).map(|v| v.clone_borrowed())
     }
@@ -139,15 +134,13 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Get multiple text from context with a specific key. The output map is usually used for serialization.
-    pub fn get_multiple_text_with_key<'b, K: AsRef<str>, T: AsRef<str> + ?Sized>(
+    pub fn get_multiple_text_with_key<'b, T: AsRef<str> + ?Sized>(
         &'a self,
-        key: K,
+        key: Key,
         text_array: &[&'b T],
     ) -> Option<HashMap<&'b str, JSONGetTextValue<'a>>> {
-        let map = self
-            .context
-            .get(key.as_ref())
-            .unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
+        let map =
+            self.context.get(&key).unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
 
         let mut new_map = HashMap::new();
 
@@ -180,15 +173,13 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Get filtered text from context with a specific key by a Regex instance. The output map is usually used for serialization.
-    pub fn get_filtered_text_with_key<K: AsRef<str>>(
+    pub fn get_filtered_text_with_key(
         &'a self,
-        key: K,
+        key: Key,
         regex: &Regex,
     ) -> Option<HashMap<&str, JSONGetTextValue<'a>>> {
-        let map = self
-            .context
-            .get(key.as_ref())
-            .unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
+        let map =
+            self.context.get(&key).unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
 
         let mut new_map = HashMap::new();
 

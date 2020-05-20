@@ -1,20 +1,28 @@
-use std::convert::{TryFrom, TryInto};
+extern crate serde;
+
+#[cfg(feature = "rocketly")]
+extern crate rocket;
+
+use std::convert::TryFrom;
 use std::fmt::{self, Display, Formatter};
+use std::str::FromStr;
+
 #[cfg(feature = "rocketly")]
 use std::io::Cursor;
 
+use super::JSONGetTextValueError;
+
+use crate::serde_json::{to_value, Map, Value};
+
+use serde::de::{Error as DeError, MapAccess, SeqAccess, Visitor};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
 #[cfg(feature = "rocketly")]
-use crate::rocket::http::RawStr;
+use rocket::http::RawStr;
 #[cfg(feature = "rocketly")]
-use crate::rocket::request::{FromFormValue, FromParam, Request};
+use rocket::request::{FromFormValue, FromParam, Request};
 #[cfg(feature = "rocketly")]
-use crate::rocket::response::{self, Responder, Response};
-use crate::serde::de::{Error as DeError, MapAccess, SeqAccess, Visitor};
-use crate::serde::{Deserialize, Deserializer, Serialize, Serializer};
-#[cfg(feature = "rocketly")]
-use crate::serde_json::Error as JSONError;
-use crate::serde_json::{Map, Value};
-use std::str::FromStr;
+use rocket::response::{self, Responder, Response};
 
 /// Represents any valid JSON value. Reference can also be wrapped.
 #[derive(Debug, Clone, PartialEq)]
@@ -37,90 +45,89 @@ impl<'a> JSONGetTextValue<'a> {
     }
 
     #[inline]
+    pub fn from_json_str<S: AsRef<str>>(
+        s: S,
+    ) -> Result<JSONGetTextValue<'static>, JSONGetTextValueError> {
+        JSONGetTextValue::parse_json(s)
+    }
+
+    #[inline]
     pub fn from_bool(b: bool) -> JSONGetTextValue<'static> {
         JSONGetTextValue::JSONValue(Value::Bool(b))
     }
 
     #[inline]
     pub fn from_i8(n: i8) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(json!(n))
+        JSONGetTextValue::JSONValue(to_value(n).unwrap())
     }
 
     #[inline]
     pub fn from_i16(n: i16) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(json!(n))
+        JSONGetTextValue::JSONValue(to_value(n).unwrap())
     }
 
     #[inline]
     pub fn from_i32(n: i32) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(json!(n))
+        JSONGetTextValue::JSONValue(to_value(n).unwrap())
     }
 
     #[inline]
     pub fn from_i64(n: i64) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(json!(n))
+        JSONGetTextValue::JSONValue(to_value(n).unwrap())
     }
 
     #[inline]
-    pub fn from_i128(n: i128) -> Result<JSONGetTextValue<'static>, String> {
-        if n > i128::from(i64::max_value()) {
-            Err(format!("{} is bigger than {}.", n, i64::max_value()))
-        } else if n < i128::from(i64::min_value()) {
-            Err(format!("{} is smaller than {}.", n, i64::min_value()))
-        } else {
-            Ok(JSONGetTextValue::JSONValue(json!(n)))
-        }
+    pub fn from_i128(n: i128) -> Result<JSONGetTextValue<'static>, JSONGetTextValueError> {
+        Ok(JSONGetTextValue::JSONValue(
+            to_value(n).map_err(|_| JSONGetTextValueError::IntegerOutOfRange)?,
+        ))
     }
 
     #[inline]
     pub fn from_isize(n: isize) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(json!(n))
+        JSONGetTextValue::JSONValue(to_value(n).unwrap())
     }
 
     #[inline]
     pub fn from_u8(n: u8) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(json!(n))
+        JSONGetTextValue::JSONValue(to_value(n).unwrap())
     }
 
     #[inline]
     pub fn from_u16(n: u16) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(json!(n))
+        JSONGetTextValue::JSONValue(to_value(n).unwrap())
     }
 
     #[inline]
     pub fn from_u32(n: u32) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(json!(n))
+        JSONGetTextValue::JSONValue(to_value(n).unwrap())
     }
 
     #[inline]
     pub fn from_u64(n: u64) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(json!(n))
+        JSONGetTextValue::JSONValue(to_value(n).unwrap())
     }
 
     #[inline]
-    pub fn from_u128(n: u128) -> Result<JSONGetTextValue<'static>, String> {
-        if n > u128::from(u64::max_value()) {
-            Err(format!("{} is bigger than {}.", n, u64::max_value()))
-        } else if n < u128::from(u64::min_value()) {
-            Err(format!("{} is smaller than {}.", n, u64::min_value()))
-        } else {
-            Ok(JSONGetTextValue::JSONValue(json!(n)))
-        }
+    pub fn from_u128(n: u128) -> Result<JSONGetTextValue<'static>, JSONGetTextValueError> {
+        Ok(JSONGetTextValue::JSONValue(
+            to_value(n).map_err(|_| JSONGetTextValueError::IntegerOutOfRange)?,
+        ))
     }
 
     #[inline]
     pub fn from_usize(n: usize) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(json!(n))
+        JSONGetTextValue::JSONValue(to_value(n).unwrap())
     }
 
     #[inline]
     pub fn from_f32(n: f32) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(json!(n))
+        JSONGetTextValue::JSONValue(to_value(n).unwrap())
     }
 
     #[inline]
     pub fn from_f64(n: f64) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(json!(n))
+        JSONGetTextValue::JSONValue(to_value(n).unwrap())
     }
 
     #[inline]
@@ -137,24 +144,32 @@ impl<'a> JSONGetTextValue<'a> {
     pub fn null() -> JSONGetTextValue<'static> {
         JSONGetTextValue::JSONValue(Value::Null)
     }
+}
 
+impl<'a> JSONGetTextValue<'a> {
     /// Convert to a string for JSON format.
-    pub fn to_json(&self) -> String {
+    pub fn to_json_string(&self) -> String {
         match self {
             JSONGetTextValue::Str(s) => {
                 let mut string = String::with_capacity(s.len() + 2);
                 string.push('"');
+
                 let mut from = 0;
+
                 for (i, c) in s.char_indices() {
                     let esc = c.escape_debug();
+
                     if esc.len() != 1 {
                         string.push_str(&s[from..i]);
+
                         for c in esc {
                             string.push(c);
                         }
+
                         from = i + c.len_utf8();
                     }
                 }
+
                 string.push_str(&s[from..]);
                 string.push('"');
 
@@ -163,6 +178,13 @@ impl<'a> JSONGetTextValue<'a> {
             JSONGetTextValue::JSONValue(v) => v.to_string(),
             JSONGetTextValue::JSONValueRef(v) => v.to_string(),
         }
+    }
+
+    #[deprecated(since = "3.2.0", note = "Please use the `to_json_string` function instead")]
+    /// Convert to a string for JSON format.
+    #[inline]
+    pub fn to_json(&self) -> String {
+        self.to_json_string()
     }
 
     /// Convert to a string slice if it is possible (if it is a string).
@@ -187,12 +209,223 @@ impl<'a> JSONGetTextValue<'a> {
 
     /// Clone the reference of this `JSONGetTextValue` instance.
     #[inline]
-    pub fn clone_borrowed(&'a self) -> JSONGetTextValue<'a> {
+    pub fn clone_borrowed(&self) -> JSONGetTextValue {
         match self {
             JSONGetTextValue::Str(s) => JSONGetTextValue::Str(*s),
             JSONGetTextValue::JSONValue(v) => JSONGetTextValue::JSONValueRef(v),
             JSONGetTextValue::JSONValueRef(v) => JSONGetTextValue::JSONValueRef(*v),
         }
+    }
+}
+
+impl<'a> PartialEq<JSONGetTextValue<'a>> for str {
+    #[inline]
+    fn eq(&self, other: &JSONGetTextValue) -> bool {
+        match other {
+            JSONGetTextValue::Str(s) => s.eq(&self),
+            JSONGetTextValue::JSONValue(v) => v.eq(&self),
+            JSONGetTextValue::JSONValueRef(v) => v.eq(&self),
+        }
+    }
+}
+
+impl<'a> PartialEq<JSONGetTextValue<'a>> for &'a str {
+    #[inline]
+    fn eq(&self, other: &JSONGetTextValue) -> bool {
+        match other {
+            JSONGetTextValue::Str(s) => s.eq(self),
+            JSONGetTextValue::JSONValue(v) => v.eq(self),
+            JSONGetTextValue::JSONValueRef(v) => v.eq(self),
+        }
+    }
+}
+
+impl<'a> PartialEq<str> for JSONGetTextValue<'a> {
+    #[inline]
+    fn eq(&self, other: &str) -> bool {
+        match self {
+            JSONGetTextValue::Str(s) => s.eq(&other),
+            JSONGetTextValue::JSONValue(v) => v.eq(&other),
+            JSONGetTextValue::JSONValueRef(v) => v.eq(&other),
+        }
+    }
+}
+
+impl<'a> Display for JSONGetTextValue<'a> {
+    #[inline]
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            JSONGetTextValue::Str(s) => s.fmt(f),
+            JSONGetTextValue::JSONValue(v) => {
+                match v.as_str() {
+                    Some(s) => s.fmt(f),
+                    None => v.fmt(f),
+                }
+            }
+            JSONGetTextValue::JSONValueRef(v) => {
+                match v.as_str() {
+                    Some(s) => s.fmt(f),
+                    None => v.fmt(f),
+                }
+            }
+        }
+    }
+}
+
+impl<'a> From<&'a str> for JSONGetTextValue<'a> {
+    #[inline]
+    fn from(v: &'a str) -> JSONGetTextValue<'a> {
+        JSONGetTextValue::from_str(v)
+    }
+}
+
+impl From<String> for JSONGetTextValue<'static> {
+    #[inline]
+    fn from(v: String) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::from_string(v)
+    }
+}
+
+impl From<bool> for JSONGetTextValue<'static> {
+    #[inline]
+    fn from(v: bool) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::from_bool(v)
+    }
+}
+
+impl From<i8> for JSONGetTextValue<'static> {
+    #[inline]
+    fn from(v: i8) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::from_i8(v)
+    }
+}
+
+impl From<i16> for JSONGetTextValue<'static> {
+    #[inline]
+    fn from(v: i16) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::from_i16(v)
+    }
+}
+
+impl From<i32> for JSONGetTextValue<'static> {
+    #[inline]
+    fn from(v: i32) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::from_i32(v)
+    }
+}
+
+impl From<i64> for JSONGetTextValue<'static> {
+    #[inline]
+    fn from(v: i64) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::from_i64(v)
+    }
+}
+
+impl From<isize> for JSONGetTextValue<'static> {
+    #[inline]
+    fn from(v: isize) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::from_isize(v)
+    }
+}
+
+impl TryFrom<i128> for JSONGetTextValue<'static> {
+    type Error = JSONGetTextValueError;
+
+    #[inline]
+    fn try_from(v: i128) -> Result<JSONGetTextValue<'static>, JSONGetTextValueError> {
+        JSONGetTextValue::from_i128(v)
+    }
+}
+
+impl From<u8> for JSONGetTextValue<'static> {
+    #[inline]
+    fn from(v: u8) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::from_u8(v)
+    }
+}
+
+impl From<u16> for JSONGetTextValue<'static> {
+    #[inline]
+    fn from(v: u16) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::from_u16(v)
+    }
+}
+
+impl From<u32> for JSONGetTextValue<'static> {
+    #[inline]
+    fn from(v: u32) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::from_u32(v)
+    }
+}
+
+impl From<u64> for JSONGetTextValue<'static> {
+    #[inline]
+    fn from(v: u64) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::from_u64(v)
+    }
+}
+
+impl From<usize> for JSONGetTextValue<'static> {
+    #[inline]
+    fn from(v: usize) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::from_usize(v)
+    }
+}
+
+impl TryFrom<u128> for JSONGetTextValue<'static> {
+    type Error = JSONGetTextValueError;
+
+    #[inline]
+    fn try_from(v: u128) -> Result<JSONGetTextValue<'static>, JSONGetTextValueError> {
+        JSONGetTextValue::from_u128(v)
+    }
+}
+
+impl From<f32> for JSONGetTextValue<'static> {
+    #[inline]
+    fn from(v: f32) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::from_f32(v)
+    }
+}
+
+impl From<f64> for JSONGetTextValue<'static> {
+    #[inline]
+    fn from(v: f64) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::from_f64(v)
+    }
+}
+
+impl From<Value> for JSONGetTextValue<'static> {
+    #[inline]
+    fn from(v: Value) -> JSONGetTextValue<'static> {
+        JSONGetTextValue::from_json_value(v)
+    }
+}
+
+impl<'a> From<&'a Value> for JSONGetTextValue<'a> {
+    #[inline]
+    fn from(v: &'a Value) -> JSONGetTextValue<'a> {
+        JSONGetTextValue::from_json_value_ref(v)
+    }
+}
+
+impl FromStr for JSONGetTextValue<'static> {
+    type Err = ();
+
+    #[inline]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(JSONGetTextValue::from_string(s))
+    }
+}
+
+// TODO serde
+
+impl<'a> JSONGetTextValue<'a> {
+    #[inline]
+    pub fn parse_json<S: AsRef<str>>(
+        s: S,
+    ) -> Result<JSONGetTextValue<'static>, JSONGetTextValueError> {
+        Ok(JSONGetTextValue::JSONValue(serde_json::from_str(s.as_ref())?))
     }
 }
 
@@ -214,14 +447,14 @@ struct JSONGetTextValueVisitor;
 impl<'de> Visitor<'de> for JSONGetTextValueVisitor {
     type Value = JSONGetTextValue<'de>;
 
-    serde_if_integer128! {
+    serde::serde_if_integer128! {
         #[inline]
         fn visit_i128<E>(self, v: i128) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
             Ok(JSONGetTextValue::from_i128(v).map_err(DeError::custom)?)
         }
     }
 
-    serde_if_integer128! {
+    serde::serde_if_integer128! {
         #[inline]
         fn visit_u128<E>(self, v: u128) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
             Ok(JSONGetTextValue::from_u128(v).map_err(DeError::custom)?)
@@ -331,228 +564,7 @@ impl<'de> Deserialize<'de> for JSONGetTextValue<'de> {
     }
 }
 
-impl<'a> PartialEq<JSONGetTextValue<'a>> for str {
-    #[inline]
-    fn eq(&self, other: &JSONGetTextValue) -> bool {
-        match other {
-            JSONGetTextValue::Str(s) => s.eq(&self),
-            JSONGetTextValue::JSONValue(v) => v.eq(self),
-            JSONGetTextValue::JSONValueRef(v) => v.eq(&self),
-        }
-    }
-}
-
-impl<'a> PartialEq<JSONGetTextValue<'a>> for &'a str {
-    #[inline]
-    fn eq(&self, other: &JSONGetTextValue) -> bool {
-        match other {
-            JSONGetTextValue::Str(s) => s.eq(self),
-            JSONGetTextValue::JSONValue(v) => v.eq(self),
-            JSONGetTextValue::JSONValueRef(v) => v.eq(self),
-        }
-    }
-}
-
-impl<'a> Display for JSONGetTextValue<'a> {
-    #[inline]
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        match self {
-            JSONGetTextValue::Str(s) => s.fmt(f),
-            JSONGetTextValue::JSONValue(v) => {
-                match v.as_str() {
-                    Some(s) => s.fmt(f),
-                    None => v.fmt(f),
-                }
-            }
-            JSONGetTextValue::JSONValueRef(v) => {
-                match v.as_str() {
-                    Some(s) => s.fmt(f),
-                    None => v.fmt(f),
-                }
-            }
-        }
-    }
-}
-
-impl<'a> From<&'a str> for JSONGetTextValue<'a> {
-    #[inline]
-    fn from(v: &'a str) -> JSONGetTextValue<'a> {
-        JSONGetTextValue::from_str(v)
-    }
-}
-
-impl From<String> for JSONGetTextValue<'static> {
-    #[inline]
-    fn from(v: String) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::from_string(v)
-    }
-}
-
-impl From<bool> for JSONGetTextValue<'static> {
-    #[inline]
-    fn from(v: bool) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::from_bool(v)
-    }
-}
-
-impl From<i8> for JSONGetTextValue<'static> {
-    #[inline]
-    fn from(v: i8) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::from_i8(v)
-    }
-}
-
-impl From<i16> for JSONGetTextValue<'static> {
-    #[inline]
-    fn from(v: i16) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::from_i16(v)
-    }
-}
-
-impl From<i32> for JSONGetTextValue<'static> {
-    #[inline]
-    fn from(v: i32) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::from_i32(v)
-    }
-}
-
-impl From<i64> for JSONGetTextValue<'static> {
-    #[inline]
-    fn from(v: i64) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::from_i64(v)
-    }
-}
-
-impl From<isize> for JSONGetTextValue<'static> {
-    #[inline]
-    fn from(v: isize) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::from_isize(v)
-    }
-}
-
-impl TryFrom<i128> for JSONGetTextValue<'static> {
-    type Error = String;
-
-    #[inline]
-    fn try_from(v: i128) -> Result<JSONGetTextValue<'static>, String> {
-        JSONGetTextValue::from_i128(v)
-    }
-}
-
-impl From<u8> for JSONGetTextValue<'static> {
-    #[inline]
-    fn from(v: u8) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::from_u8(v)
-    }
-}
-
-impl From<u16> for JSONGetTextValue<'static> {
-    #[inline]
-    fn from(v: u16) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::from_u16(v)
-    }
-}
-
-impl From<u32> for JSONGetTextValue<'static> {
-    #[inline]
-    fn from(v: u32) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::from_u32(v)
-    }
-}
-
-impl From<u64> for JSONGetTextValue<'static> {
-    #[inline]
-    fn from(v: u64) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::from_u64(v)
-    }
-}
-
-impl From<usize> for JSONGetTextValue<'static> {
-    #[inline]
-    fn from(v: usize) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::from_usize(v)
-    }
-}
-
-impl TryFrom<u128> for JSONGetTextValue<'static> {
-    type Error = String;
-
-    #[inline]
-    fn try_from(v: u128) -> Result<JSONGetTextValue<'static>, String> {
-        JSONGetTextValue::from_u128(v)
-    }
-}
-
-impl From<f32> for JSONGetTextValue<'static> {
-    #[inline]
-    fn from(v: f32) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::from_f32(v)
-    }
-}
-
-impl From<f64> for JSONGetTextValue<'static> {
-    #[inline]
-    fn from(v: f64) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::from_f64(v)
-    }
-}
-
-impl From<Value> for JSONGetTextValue<'static> {
-    #[inline]
-    fn from(v: Value) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::from_json_value(v)
-    }
-}
-
-impl<'a> From<&'a Value> for JSONGetTextValue<'a> {
-    #[inline]
-    fn from(v: &'a Value) -> JSONGetTextValue<'a> {
-        JSONGetTextValue::from_json_value_ref(v)
-    }
-}
-
-impl<'a, T: Into<JSONGetTextValue<'a>>> From<Option<T>> for JSONGetTextValue<'a> {
-    #[inline]
-    fn from(v: Option<T>) -> JSONGetTextValue<'a> {
-        match v {
-            Some(v) => v.into(),
-            None => JSONGetTextValue::null(),
-        }
-    }
-}
-
-impl TryFrom<Option<i128>> for JSONGetTextValue<'static> {
-    type Error = String;
-
-    #[inline]
-    fn try_from(v: Option<i128>) -> Result<JSONGetTextValue<'static>, String> {
-        match v {
-            Some(v) => v.try_into(),
-            None => Ok(JSONGetTextValue::null()),
-        }
-    }
-}
-
-impl TryFrom<Option<u128>> for JSONGetTextValue<'static> {
-    type Error = String;
-
-    #[inline]
-    fn try_from(v: Option<u128>) -> Result<JSONGetTextValue<'static>, String> {
-        match v {
-            Some(v) => v.try_into(),
-            None => Ok(JSONGetTextValue::null()),
-        }
-    }
-}
-
-impl FromStr for JSONGetTextValue<'static> {
-    type Err = ();
-
-    #[inline]
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(JSONGetTextValue::from_string(s))
-    }
-}
+// TODO Rocket
 
 #[cfg(feature = "rocketly")]
 impl<'a> Responder<'a> for JSONGetTextValue<'a> {
@@ -561,7 +573,7 @@ impl<'a> Responder<'a> for JSONGetTextValue<'a> {
 
         response
             .raw_header("Content-Type", "application/json")
-            .sized_body(Cursor::new(self.to_json()));
+            .sized_body(Cursor::new(self.to_json_string()));
 
         response.ok()
     }
@@ -569,22 +581,18 @@ impl<'a> Responder<'a> for JSONGetTextValue<'a> {
 
 #[cfg(feature = "rocketly")]
 impl<'a> FromParam<'a> for JSONGetTextValue<'a> {
-    type Error = JSONError;
+    type Error = JSONGetTextValueError;
 
     fn from_param(param: &'a RawStr) -> Result<Self, Self::Error> {
-        let value: Value = serde_json::from_str(param)?;
-
-        Ok(JSONGetTextValue::from_json_value(value))
+        JSONGetTextValue::parse_json(param)
     }
 }
 
 #[cfg(feature = "rocketly")]
 impl<'a> FromFormValue<'a> for JSONGetTextValue<'a> {
-    type Error = JSONError;
+    type Error = JSONGetTextValueError;
 
     fn from_form_value(form_value: &'a RawStr) -> Result<Self, Self::Error> {
-        let value: Value = serde_json::from_str(form_value)?;
-
-        Ok(JSONGetTextValue::from_json_value(value))
+        JSONGetTextValue::parse_json(form_value)
     }
 }

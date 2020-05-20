@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use std::ops::{Deref, DerefMut};
 
 #[derive(Debug)]
-pub struct DebuggableMutate<T: Debug> {
+pub(crate) struct DebuggableMutate<T: Debug> {
     data: UnsafeCell<T>,
 }
 
