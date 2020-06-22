@@ -31,6 +31,6 @@ assert_eq!(Key(Language::from_str("us").unwrap()), key);
 #[macro_export]
 macro_rules! key {
     ($key:expr) => {{
-        Key($crate::unic_langid_macros::lang!($key))
+        $crate::Key($crate::unic_langid_macros::lang!($key))
     }};
 }
