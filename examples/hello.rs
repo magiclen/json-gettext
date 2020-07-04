@@ -24,7 +24,7 @@ fn hello(ctx: State<JSONGetTextManager>, lang: String) -> String {
 fn main() {
     rocket::ignite()
         .attach(JSONGetTextManager::fairing(|| {
-            static_json_gettext_build_rocketly!(
+            static_json_gettext_build_for_rocket!(
                 "en_US",
                 "en_US",
                 "langs/en_US.json",

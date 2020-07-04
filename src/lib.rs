@@ -15,20 +15,20 @@ let ctx = static_json_gettext_build!(
 ).unwrap();
 
 assert_eq!("Hello, world!", get_text!(ctx, "hello").unwrap());
-assert_eq!("哈囉，世界！", get_text!(ctx,  "zh_TW", "hello").unwrap());
+assert_eq!("哈囉，世界！", get_text!(ctx, "zh_TW", "hello").unwrap());
 ```
 
 ## Rocket Support
 
-This crate supports the Rocket framework. In order to reload changed json files instead of recompiling the program you have to enable the `rocketly` feature for this crate.
+This crate supports the Rocket framework. In order to reload changed json files instead of recompiling the program you have to enable the `rocket` feature for this crate.
 
 ```toml
 [dependencies.json-gettext]
 version = "*"
-features = ["rocketly"]
+features = ["rocket"]
 ```
 
-Then, use the `static_json_gettext_build_rocketly` macro instead of the `static_json_gettext_build` macro to build a `JSONGetText`(`JSONGetTextManager`).
+Then, use the `static_json_gettext_build_for_rocket` macro instead of the `static_json_gettext_build` macro to build a `JSONGetText`(`JSONGetTextManager`).
 
 ```rust,ignore
 #[macro_use] extern crate json_gettext;
@@ -53,7 +53,7 @@ fn hello(ctx: State<JSONGetTextManager>, lang: String) -> String {
 fn main() {
     rocket::ignite()
         .attach(JSONGetTextManager::fairing(|| {
-            static_json_gettext_build_rocketly!("en_US",
+            static_json_gettext_build_for_rocket!("en_US",
                 "en_US", "langs/en_US.json",
                 "zh_TW", "langs/zh_TW.json"
             )
@@ -76,7 +76,7 @@ For example,
 ```toml
 [dependencies.json-gettext]
 version = "*"
-features = ["language_region_pair", "rocketly"]
+features = ["language_region_pair", "rocket"]
 ```
 
 ```rust,ignore
@@ -110,7 +110,7 @@ fn index(ctx: State<JSONGetTextManager>, accept_language: &AcceptLanguage) -> St
 fn main() {
     rocket::ignite()
         .attach(JSONGetTextManager::fairing(|| {
-            static_json_gettext_build_rocketly!(
+            static_json_gettext_build_for_rocket!(
                 key!("en"),
                 key!("en"),
                 "langs/en_US.json",
@@ -136,7 +136,7 @@ mod json_get_text_build_errors;
 mod macros;
 mod value;
 
-#[cfg(all(debug_assertions, feature = "rocketly"))]
+#[cfg(all(debug_assertions, feature = "rocket"))]
 mod mutate;
 
 #[cfg(feature = "langid")]
@@ -148,7 +148,7 @@ mod key_string;
 pub use json_get_text_build_errors::*;
 pub use value::*;
 
-#[cfg(all(debug_assertions, feature = "rocketly"))]
+#[cfg(all(debug_assertions, feature = "rocket"))]
 use mutate::DebuggableMutate;
 
 #[cfg(feature = "langid")]

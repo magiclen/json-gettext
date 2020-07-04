@@ -1,4 +1,4 @@
-#[cfg(feature = "rocketly")]
+#[cfg(feature = "rocket")]
 mod rocket_feature;
 
 /**

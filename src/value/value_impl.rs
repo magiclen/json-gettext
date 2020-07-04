@@ -1,13 +1,13 @@
 extern crate serde;
 
-#[cfg(feature = "rocketly")]
+#[cfg(feature = "rocket")]
 extern crate rocket;
 
 use std::convert::TryFrom;
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 
-#[cfg(feature = "rocketly")]
+#[cfg(feature = "rocket")]
 use std::io::Cursor;
 
 use super::JSONGetTextValueError;
@@ -17,11 +17,11 @@ use crate::serde_json::{self, to_value, Map, Value};
 use serde::de::{Error as DeError, MapAccess, SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-#[cfg(feature = "rocketly")]
-use rocket::http::RawStr;
-#[cfg(feature = "rocketly")]
+#[cfg(feature = "rocket")]
+use rocket::http::{hyper::header::ContentLength, ContentType, RawStr};
+#[cfg(feature = "rocket")]
 use rocket::request::{FromFormValue, FromParam, Request};
-#[cfg(feature = "rocketly")]
+#[cfg(feature = "rocket")]
 use rocket::response::{self, Responder, Response};
 
 /// Represents any valid JSON value. Reference can also be wrapped.
@@ -141,7 +141,9 @@ impl<'a> JSONGetTextValue<'a> {
     }
 
     #[inline]
-    pub fn from_serializable<T: Serialize>(v: T) -> Result<JSONGetTextValue<'static>, serde_json::Error> {
+    pub fn from_serializable<T: Serialize>(
+        v: T,
+    ) -> Result<JSONGetTextValue<'static>, serde_json::Error> {
         Ok(JSONGetTextValue::JSONValue(to_value(v)?))
     }
 
@@ -437,8 +439,8 @@ impl<'a> JSONGetTextValue<'a> {
 impl<'a> Serialize for JSONGetTextValue<'a> {
     #[inline]
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer, {
+    where
+        S: Serializer, {
         match self {
             JSONGetTextValue::Str(s) => s.serialize(serializer),
             JSONGetTextValue::JSONValue(v) => v.serialize(serializer),
@@ -473,64 +475,64 @@ impl<'de> Visitor<'de> for JSONGetTextValueVisitor {
 
     #[inline]
     fn visit_bool<E>(self, v: bool) -> Result<JSONGetTextValue<'static>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_bool(v))
     }
 
     #[inline]
     fn visit_i64<E>(self, v: i64) -> Result<JSONGetTextValue<'static>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_i64(v))
     }
 
     #[inline]
     fn visit_u64<E>(self, v: u64) -> Result<JSONGetTextValue<'static>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_u64(v))
     }
 
     #[inline]
     fn visit_f64<E>(self, v: f64) -> Result<JSONGetTextValue<'static>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_f64(v))
     }
 
     #[inline]
     fn visit_str<E>(self, v: &str) -> Result<JSONGetTextValue<'static>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_string(v.to_string()))
     }
 
     #[inline]
     fn visit_borrowed_str<E>(self, v: &'de str) -> Result<JSONGetTextValue<'de>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_str(v))
     }
 
     #[inline]
     fn visit_string<E>(self, v: String) -> Result<JSONGetTextValue<'static>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::from_string(v))
     }
 
     #[inline]
     fn visit_none<E>(self) -> Result<JSONGetTextValue<'static>, E>
-        where
-            E: DeError, {
+    where
+        E: DeError, {
         Ok(JSONGetTextValue::null())
     }
 
     #[inline]
     fn visit_seq<A>(self, mut seq: A) -> Result<JSONGetTextValue<'static>, A::Error>
-        where
-            A: SeqAccess<'de>, {
+    where
+        A: SeqAccess<'de>, {
         let mut v = match seq.size_hint() {
             Some(size) => Vec::with_capacity(size),
             None => Vec::new(),
@@ -545,8 +547,8 @@ impl<'de> Visitor<'de> for JSONGetTextValueVisitor {
 
     #[inline]
     fn visit_map<A>(self, mut map: A) -> Result<JSONGetTextValue<'static>, A::Error>
-        where
-            A: MapAccess<'de>, {
+    where
+        A: MapAccess<'de>, {
         let mut v = match map.size_hint() {
             Some(size) => Map::with_capacity(size),
             None => Map::new(),
@@ -563,28 +565,31 @@ impl<'de> Visitor<'de> for JSONGetTextValueVisitor {
 impl<'de> Deserialize<'de> for JSONGetTextValue<'de> {
     #[inline]
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>, {
+    where
+        D: Deserializer<'de>, {
         deserializer.deserialize_str(JSONGetTextValueVisitor)
     }
 }
 
 // TODO Rocket
 
-#[cfg(feature = "rocketly")]
+#[cfg(feature = "rocket")]
 impl<'a> Responder<'a> for JSONGetTextValue<'a> {
     fn respond_to(self, _: &Request) -> response::Result<'a> {
         let mut response = Response::build();
 
+        let s = self.to_json_string();
+
         response
-            .raw_header("Content-Type", "application/json")
-            .sized_body(Cursor::new(self.to_json_string()));
+            .header(ContentType::JSON)
+            .header(ContentLength(s.len() as u64))
+            .sized_body(Cursor::new(s));
 
         response.ok()
     }
 }
 
-#[cfg(feature = "rocketly")]
+#[cfg(feature = "rocket")]
 impl<'a> FromParam<'a> for JSONGetTextValue<'a> {
     type Error = JSONGetTextValueError;
 
@@ -593,7 +598,7 @@ impl<'a> FromParam<'a> for JSONGetTextValue<'a> {
     }
 }
 
-#[cfg(feature = "rocketly")]
+#[cfg(feature = "rocket")]
 impl<'a> FromFormValue<'a> for JSONGetTextValue<'a> {
     type Error = JSONGetTextValueError;
 

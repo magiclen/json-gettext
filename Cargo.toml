@@ -1,6 +1,6 @@
 [package]
 name = "json-gettext"
-version = "3.2.3"
+version = "3.2.4"
 authors = ["Magic Len <len@magiclen.org>"]
 edition = "2018"
 repository = "https://github.com/magiclen/json-gettext"
@@ -22,7 +22,7 @@ serde_json = "1"
 regex = "1"
 unic-langid = { version = "0.9", features = ["macros"], optional = true }
 unic-langid-macros = { version = "0.9", optional = true }
-rocket = {version = "0.4", optional = true}
+rocket = {version = "0.4", optional = true }
 rocket-accept-language = { version = "0.7", optional = true }
 
 [features]
@@ -34,16 +34,16 @@ region = ["langid"]
 
 [[example]]
 name = "hello"
-required-features = ["rocketly"]
+required-features = ["rocket"]
 
 [[example]]
 name = "hello_language_region_pair"
-required-features = ["rocketly", "language_region_pair", "rocket-accept-language"]
+required-features = ["rocket", "language_region_pair", "rocket-accept-language"]
 
 [[example]]
 name = "hello_language"
-required-features = ["rocketly", "language", "rocket-accept-language"]
+required-features = ["rocket", "language", "rocket-accept-language"]
 
 [[example]]
 name = "hello_region"
-required-features = ["rocketly", "region", "rocket-accept-language"]
+required-features = ["rocket", "region", "rocket-accept-language"]

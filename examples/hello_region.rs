@@ -28,7 +28,7 @@ fn index(ctx: State<JSONGetTextManager>, accept_language: &AcceptLanguage) -> St
 fn main() {
     rocket::ignite()
         .attach(JSONGetTextManager::fairing(|| {
-            static_json_gettext_build_rocketly!(
+            static_json_gettext_build_for_rocket!(
                 key!("us"),
                 key!("us"),
                 "langs/en_US.json",
