@@ -18,7 +18,7 @@ use serde::de::{Error as DeError, MapAccess, SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "rocket")]
-use rocket::http::{hyper::header::ContentLength, ContentType, RawStr};
+use rocket::http::RawStr;
 #[cfg(feature = "rocket")]
 use rocket::request::{FromFormValue, FromParam, Request};
 #[cfg(feature = "rocket")]
@@ -581,8 +581,8 @@ impl<'a> Responder<'a> for JSONGetTextValue<'a> {
         let s = self.to_json_string();
 
         response
-            .header(ContentType::JSON)
-            .header(ContentLength(s.len() as u64))
+            .raw_header("Content-Type", "application/json")
+            .raw_header("Content-Length", format!("{}", s.len()))
             .sized_body(Cursor::new(s));
 
         response.ok()
