@@ -1,4 +1,5 @@
 use std::fmt::{self, Display, Formatter};
+use std::ops::Deref;
 
 use crate::unic_langid::subtags::Region;
 
@@ -23,6 +24,15 @@ impl PartialEq<Key> for Region {
     #[inline]
     fn eq(&self, other: &Key) -> bool {
         self.eq(&other.0)
+    }
+}
+
+impl Deref for Key {
+    type Target = Region;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
