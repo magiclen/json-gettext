@@ -12,6 +12,20 @@ impl Display for Key {
     }
 }
 
+impl PartialEq<Region> for Key {
+    #[inline]
+    fn eq(&self, other: &Region) -> bool {
+        self.0.eq(other)
+    }
+}
+
+impl PartialEq<Key> for Region {
+    #[inline]
+    fn eq(&self, other: &Key) -> bool {
+        self.eq(&other.0)
+    }
+}
+
 /**
 Create a literal key.
 
