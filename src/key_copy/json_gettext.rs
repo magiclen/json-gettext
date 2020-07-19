@@ -157,7 +157,7 @@ impl<'a> JSONGetText<'a> {
     pub fn get_filtered_text(
         &'a self,
         regex: &Regex,
-    ) -> Option<HashMap<&str, JSONGetTextValue<'a>>> {
+    ) -> Option<HashMap<&'a str, JSONGetTextValue<'a>>> {
         let map = self.context.get(&self.default_key).unwrap();
 
         let mut new_map = HashMap::new();
@@ -177,7 +177,7 @@ impl<'a> JSONGetText<'a> {
         &'a self,
         key: Key,
         regex: &Regex,
-    ) -> Option<HashMap<&str, JSONGetTextValue<'a>>> {
+    ) -> Option<HashMap<&'a str, JSONGetTextValue<'a>>> {
         let map =
             self.context.get(&key).unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
 
