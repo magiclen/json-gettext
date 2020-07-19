@@ -61,7 +61,7 @@ impl<'a> JSONGetText<'a> {
                 inner_context.insert(key, map);
             }
 
-            inner_context.insert(default_key.clone(), default_map);
+            inner_context.insert(default_key.clone().into(), default_map);
         }
 
         Ok(JSONGetText {

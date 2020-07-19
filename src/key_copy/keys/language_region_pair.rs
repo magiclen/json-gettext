@@ -2,7 +2,7 @@ use std::fmt::{self, Display, Formatter, Write};
 
 use crate::unic_langid::subtags::{Language, Region};
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord, Copy)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Key(pub Language, pub Option<Region>);
 
 impl Display for Key {

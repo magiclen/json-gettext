@@ -35,14 +35,12 @@ impl<'a> JSONGetTextBuilder<'a> {
         json: &'a J,
     ) -> Result<&mut Self, JSONGetTextBuildError> {
         if self.context.contains_key(key.as_ref()) {
-            return Err(JSONGetTextBuildError::DuplicatedKey(key.into()));
+            return Err(JSONGetTextBuildError::DuplicatedKey(key.into().into()));
         }
 
         let map: HashMap<String, JSONGetTextValue<'a>> = serde_json::from_str(json.as_ref())?;
 
-        let key = key.into();
-
-        self.context.insert(key, map);
+        self.context.insert(key.into().into(), map);
 
         Ok(self)
     }
@@ -54,7 +52,7 @@ impl<'a> JSONGetTextBuilder<'a> {
         json: J,
     ) -> Result<&mut Self, JSONGetTextBuildError> {
         if self.context.contains_key(key.as_ref()) {
-            return Err(JSONGetTextBuildError::DuplicatedKey(key.into()));
+            return Err(JSONGetTextBuildError::DuplicatedKey(key.into().into()));
         }
 
         let value: Map<String, Value> = serde_json::from_str(json.as_ref())?;
@@ -66,9 +64,7 @@ impl<'a> JSONGetTextBuilder<'a> {
             map.insert(k, JSONGetTextValue::from_json_value(v));
         }
 
-        let key = key.into();
-
-        self.context.insert(key, map);
+        self.context.insert(key.into().into(), map);
 
         Ok(self)
     }
@@ -80,7 +76,7 @@ impl<'a> JSONGetTextBuilder<'a> {
         path: P,
     ) -> Result<&mut Self, JSONGetTextBuildError> {
         if self.context.contains_key(key.as_ref()) {
-            return Err(JSONGetTextBuildError::DuplicatedKey(key.into()));
+            return Err(JSONGetTextBuildError::DuplicatedKey(key.into().into()));
         }
 
         let path = path.as_ref();
@@ -94,9 +90,7 @@ impl<'a> JSONGetTextBuilder<'a> {
             map.insert(k, JSONGetTextValue::from_json_value(v));
         }
 
-        let key = key.into();
-
-        self.context.insert(key, map);
+        self.context.insert(key.into().into(), map);
 
         Ok(self)
     }
@@ -108,7 +102,7 @@ impl<'a> JSONGetTextBuilder<'a> {
         value: S,
     ) -> Result<&mut Self, JSONGetTextBuildError> {
         if self.context.contains_key(key.as_ref()) {
-            return Err(JSONGetTextBuildError::DuplicatedKey(key.into()));
+            return Err(JSONGetTextBuildError::DuplicatedKey(key.into().into()));
         }
 
         let value: Value = serde_json::to_value(value)?;
@@ -122,9 +116,7 @@ impl<'a> JSONGetTextBuilder<'a> {
                     map.insert(k, JSONGetTextValue::from_json_value(v));
                 }
 
-                let key = key.into();
-
-                self.context.insert(key, map);
+                self.context.insert(key.into().into(), map);
 
                 Ok(self)
             }
@@ -143,12 +135,10 @@ impl<'a> JSONGetTextBuilder<'a> {
         map: HashMap<String, JSONGetTextValue<'a>>,
     ) -> Result<&mut Self, JSONGetTextBuildError> {
         if self.context.contains_key(key.as_ref()) {
-            return Err(JSONGetTextBuildError::DuplicatedKey(key.into()));
+            return Err(JSONGetTextBuildError::DuplicatedKey(key.into().into()));
         }
 
-        let key = key.into();
-
-        self.context.insert(key, map);
+        self.context.insert(key.into().into(), map);
 
         Ok(self)
     }

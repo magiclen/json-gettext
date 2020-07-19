@@ -3,7 +3,7 @@ use std::ops::Deref;
 
 use crate::unic_langid::subtags::Language;
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord, Copy)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Key(pub Language);
 
 impl Display for Key {
@@ -24,6 +24,13 @@ impl PartialEq<Key> for Language {
     #[inline]
     fn eq(&self, other: &Key) -> bool {
         self.eq(&other.0)
+    }
+}
+
+impl From<Language> for Key {
+    #[inline]
+    fn from(l: Language) -> Self {
+        Key(l)
     }
 }
 

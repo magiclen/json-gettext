@@ -3,7 +3,7 @@ use std::ops::Deref;
 
 use crate::unic_langid::subtags::Region;
 
-#[derive(Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord, Copy)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Key(pub Region);
 
 impl Display for Key {
@@ -24,6 +24,13 @@ impl PartialEq<Key> for Region {
     #[inline]
     fn eq(&self, other: &Key) -> bool {
         self.eq(&other.0)
+    }
+}
+
+impl From<Region> for Key {
+    #[inline]
+    fn from(r: Region) -> Self {
+        Key(r)
     }
 }
 
