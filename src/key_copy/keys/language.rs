@@ -1,6 +1,8 @@
 use std::fmt::{self, Display, Formatter};
 use std::ops::Deref;
+use std::str::FromStr;
 
+use crate::unic_langid::parser::ParserError;
 use crate::unic_langid::subtags::Language;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -31,6 +33,15 @@ impl From<Language> for Key {
     #[inline]
     fn from(l: Language) -> Self {
         Key(l)
+    }
+}
+
+impl FromStr for Key {
+    type Err = ParserError;
+
+    #[inline]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Key(Language::from_str(s)?))
     }
 }
 

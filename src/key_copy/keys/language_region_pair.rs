@@ -1,6 +1,8 @@
 use std::fmt::{self, Display, Formatter, Write};
+use std::str::FromStr;
 
 use crate::unic_langid::subtags::{Language, Region};
+use crate::unic_langid::{LanguageIdentifier, LanguageIdentifierError};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Key(pub Language, pub Option<Region>);
@@ -16,6 +18,20 @@ impl Display for Key {
         }
 
         Ok(())
+    }
+}
+
+impl FromStr for Key {
+    type Err = LanguageIdentifierError;
+
+    #[inline]
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let langid = LanguageIdentifier::from_str(s)?;
+
+        let language = langid.language;
+        let region = langid.region;
+
+        Ok(Key(language, region))
     }
 }
 
