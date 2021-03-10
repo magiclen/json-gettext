@@ -55,7 +55,11 @@ impl JSONGetTextManager {
     }
 
     pub fn reload_if_needed(&self) -> Result<(), JSONGetTextBuildError> {
-        if !self.reloading.compare_and_swap(false, true, Ordering::Relaxed) {
+        if self
+            .reloading
+            .compare_exchange(false, true, Ordering::Relaxed, Ordering::Relaxed)
+            .is_err()
+        {
             let mut do_reload = false;
 
             let files = self.files.get_mut();

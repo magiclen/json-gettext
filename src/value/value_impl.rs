@@ -457,14 +457,14 @@ impl<'de> Visitor<'de> for JSONGetTextValueVisitor {
     serde::serde_if_integer128! {
         #[inline]
         fn visit_i128<E>(self, v: i128) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
-            Ok(JSONGetTextValue::from_i128(v).map_err(DeError::custom)?)
+            JSONGetTextValue::from_i128(v).map_err(DeError::custom)
         }
     }
 
     serde::serde_if_integer128! {
         #[inline]
         fn visit_u128<E>(self, v: u128) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
-            Ok(JSONGetTextValue::from_u128(v).map_err(DeError::custom)?)
+            JSONGetTextValue::from_u128(v).map_err(DeError::custom)
         }
     }
 

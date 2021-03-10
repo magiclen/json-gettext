@@ -6,8 +6,8 @@ mod debug;
 #[cfg(not(debug_assertions))]
 mod release;
 
-use std::str::FromStr;
 use std::error::Error;
+use std::str::FromStr;
 
 #[cfg(debug_assertions)]
 pub use debug::*;
