@@ -59,7 +59,7 @@ impl JSONGetTextManager {
         if self
             .reloading
             .compare_exchange(false, true, Ordering::Relaxed, Ordering::Relaxed)
-            .is_err()
+            .is_ok()
         {
             let mut do_reload = false;
 
