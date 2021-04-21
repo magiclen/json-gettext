@@ -1,7 +1,7 @@
 JSON Get Text
 ====================
 
-[![Build Status](https://travis-ci.org/magiclen/json-gettext.svg?branch=master)](https://travis-ci.org/magiclen/json-gettext)
+[![CI](https://github.com/magiclen/json-gettext/actions/workflows/ci.yml/badge.svg)](https://github.com/magiclen/json-gettext/actions/workflows/ci.yml)
 
 This is a library for getting text from JSON usually for internationalization.
 

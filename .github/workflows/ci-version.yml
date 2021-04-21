@@ -1,0 +1,52 @@
+name: CI-version
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+        toolchain:
+          - stable
+          - nightly
+    name: Test ${{ matrix.toolchain }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          override: true
+      - run: cargo build --release
+      - run: cargo test --release
+      - run: cargo doc --release
+      - run: cargo build --release --features language_region_pair
+      - run: cargo test --release --features language_region_pair
+      - run: cargo doc --release --features language_region_pair
+      - run: cargo build --release --features language
+      - run: cargo test --release --features language
+      - run: cargo doc --release --features language
+      - run: cargo build --release --features region
+      - run: cargo test --release --features region
+      - run: cargo doc --release --features region
+      - run: cargo build --release --features language_region_pair --features rocketly
+      - run: cargo test --release --features language_region_pair --features rocketly
+      - run: cargo doc --release --features language_region_pair --features rocketly
+      - run: cargo build --release --features language --features rocketly
+      - run: cargo test --release --features language --features rocketly
+      - run: cargo doc --release --features language --features rocketly
+      - run: cargo build --release --features region --features rocketly
+      - run: cargo test --release --features region --features rocketly
+      - run: cargo doc --release --features region --features rocketly
