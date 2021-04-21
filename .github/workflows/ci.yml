@@ -73,12 +73,12 @@ jobs:
       - run: cargo build --features region
       - run: cargo test --features region
       - run: cargo doc --features region
-      - run: cargo build --features language_region_pair --features rocketly
-      - run: cargo test --features language_region_pair --features rocketly
-      - run: cargo doc --features language_region_pair --features rocketly
-      - run: cargo build --features language --features rocketly
-      - run: cargo test --features language --features rocketly
-      - run: cargo doc --features language --features rocketly
-      - run: cargo build --features region --features rocketly
-      - run: cargo test --features region --features rocketly
-      - run: cargo doc --features region --features rocketly
+      - run: cargo build --features language_region_pair --features rocket
+      - run: cargo test --features language_region_pair --features rocket
+      - run: cargo doc --features language_region_pair --features rocket
+      - run: cargo build --features language --features rocket
+      - run: cargo test --features language --features rocket
+      - run: cargo doc --features language --features rocket
+      - run: cargo build --features region --features rocket
+      - run: cargo test --features region --features rocket
+      - run: cargo doc --features region --features rocket
