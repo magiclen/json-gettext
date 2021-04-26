@@ -29,23 +29,30 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           override: true
       - run: cargo build --release
+      - run: cargo build --examples --release
       - run: cargo test --release
       - run: cargo doc --release
       - run: cargo build --release --features language_region_pair
+      - run: cargo build --examples --release --features language_region_pair
       - run: cargo test --release --features language_region_pair
       - run: cargo doc --release --features language_region_pair
       - run: cargo build --release --features language
+      - run: cargo build --examples --release --features language
       - run: cargo test --release --features language
       - run: cargo doc --release --features language
       - run: cargo build --release --features region
+      - run: cargo build --examples --release --features region
       - run: cargo test --release --features region
       - run: cargo doc --release --features region
       - run: cargo build --release --features language_region_pair --features rocket
+      - run: cargo build --examples --release --features language_region_pair --features rocket
       - run: cargo test --release --features language_region_pair --features rocket
       - run: cargo doc --release --features language_region_pair --features rocket
       - run: cargo build --release --features language --features rocket
+      - run: cargo build --examples --release --features language --features rocket
       - run: cargo test --release --features language --features rocket
       - run: cargo doc --release --features language --features rocket
       - run: cargo build --release --features region --features rocket
+      - run: cargo build --examples --release --features region --features rocket
       - run: cargo test --release --features region --features rocket
       - run: cargo doc --release --features region --features rocket

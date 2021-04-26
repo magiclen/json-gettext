@@ -50,23 +50,30 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
           override: true
       - run: cargo build
+      - run: cargo build --examples
       - run: cargo test
       - run: cargo doc
       - run: cargo build --features language_region_pair
+      - run: cargo build --examples --features language_region_pair
       - run: cargo test --features language_region_pair
       - run: cargo doc --features language_region_pair
       - run: cargo build --features language
+      - run: cargo build --examples --features language
       - run: cargo test --features language
       - run: cargo doc --features language
       - run: cargo build --features region
+      - run: cargo build --examples --features region
       - run: cargo test --features region
       - run: cargo doc --features region
       - run: cargo build --features language_region_pair --features rocket
+      - run: cargo build --examples --features language_region_pair --features rocket
       - run: cargo test --features language_region_pair --features rocket
       - run: cargo doc --features language_region_pair --features rocket
       - run: cargo build --features language --features rocket
+      - run: cargo build --examples --features language --features rocket
       - run: cargo test --features language --features rocket
       - run: cargo doc --features language --features rocket
       - run: cargo build --features region --features rocket
+      - run: cargo build --examples --features region --features rocket
       - run: cargo test --features region --features rocket
       - run: cargo doc --features region --features rocket
