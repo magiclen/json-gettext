@@ -5,9 +5,9 @@ use super::JSONGetTextManager;
 use rocket::data::Data;
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::request::Request;
-use rocket::{Rocket, State};
+use rocket::{Build, Rocket, State};
 
-const FAIRING_NAME: &str = "JSONGetText";
+const FAIRING_NAME: &str = "JSONGetText (Debug)";
 
 /// The fairing of `JSONGetTextManager`.
 #[allow(clippy::type_complexity)]
@@ -16,17 +16,18 @@ pub struct JSONGetTextFairing {
         Box<dyn Fn() -> (&'static str, Vec<(&'static str, &'static str)>) + Send + Sync + 'static>,
 }
 
+#[rocket::async_trait]
 impl Fairing for JSONGetTextFairing {
     #[inline]
     fn info(&self) -> Info {
         Info {
             name: FAIRING_NAME,
-            kind: Kind::Attach | Kind::Request,
+            kind: Kind::Ignite | Kind::Request,
         }
     }
 
     #[inline]
-    fn on_attach(&self, rocket: Rocket) -> Result<Rocket, Rocket> {
+    async fn on_ignite(&self, rocket: Rocket<Build>) -> Result<Rocket<Build>, Rocket<Build>> {
         let (default_key, source) = (self.custom_callback)();
 
         let state = JSONGetTextManager::from_files(default_key, source).unwrap();
@@ -35,9 +36,10 @@ impl Fairing for JSONGetTextFairing {
     }
 
     #[inline]
-    fn on_request(&self, req: &mut Request, _data: &Data) {
+    async fn on_request(&self, req: &mut Request<'_>, _data: &mut Data) {
         let ctx = req
             .guard::<State<JSONGetTextManager>>()
+            .await
             .expect("JSONGetTextManager registered in on_attach");
 
         ctx.reload_if_needed().unwrap();

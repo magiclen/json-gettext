@@ -21,7 +21,7 @@ println!("{:?}", ctx);
 **/
 #[macro_export]
 macro_rules! static_json_gettext_build {
-    ( $default_key:expr, $($key:expr, $path:expr), * ) => {
+    ( $default_key:expr; $($key:expr => $path:expr), * $(,)* ) => {
         {
             let mut builder = $crate::JSONGetText::build($default_key);
 

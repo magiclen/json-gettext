@@ -18,9 +18,9 @@ use serde::de::{Error as DeError, MapAccess, SeqAccess, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 #[cfg(feature = "rocket")]
-use rocket::http::RawStr;
+use rocket::form::{self, FromFormField, ValueField};
 #[cfg(feature = "rocket")]
-use rocket::request::{FromFormValue, FromParam, Request};
+use rocket::request::{FromParam, Request};
 #[cfg(feature = "rocket")]
 use rocket::response::{self, Responder, Response};
 
@@ -574,8 +574,8 @@ impl<'de> Deserialize<'de> for JSONGetTextValue<'de> {
 // TODO Rocket
 
 #[cfg(feature = "rocket")]
-impl<'a> Responder<'a> for JSONGetTextValue<'a> {
-    fn respond_to(self, _: &Request) -> response::Result<'a> {
+impl<'r, 'o: 'r> Responder<'r, 'o> for JSONGetTextValue<'o> {
+    fn respond_to(self, _: &'r Request<'_>) -> response::Result<'o> {
         let mut response = Response::build();
 
         let s = self.to_json_string();
@@ -583,7 +583,7 @@ impl<'a> Responder<'a> for JSONGetTextValue<'a> {
         response
             .raw_header("Content-Type", "application/json")
             .raw_header("Content-Length", format!("{}", s.len()))
-            .sized_body(Cursor::new(s));
+            .sized_body(s.len(), Cursor::new(s));
 
         response.ok()
     }
@@ -593,16 +593,15 @@ impl<'a> Responder<'a> for JSONGetTextValue<'a> {
 impl<'a> FromParam<'a> for JSONGetTextValue<'a> {
     type Error = JSONGetTextValueError;
 
-    fn from_param(param: &'a RawStr) -> Result<Self, Self::Error> {
+    fn from_param(param: &'a str) -> Result<Self, Self::Error> {
         JSONGetTextValue::parse_json(param)
     }
 }
 
 #[cfg(feature = "rocket")]
-impl<'a> FromFormValue<'a> for JSONGetTextValue<'a> {
-    type Error = JSONGetTextValueError;
-
-    fn from_form_value(form_value: &'a RawStr) -> Result<Self, Self::Error> {
-        JSONGetTextValue::parse_json(form_value)
+#[rocket::async_trait]
+impl<'v> FromFormField<'v> for JSONGetTextValue<'v> {
+    fn from_value(field: ValueField<'v>) -> form::Result<'v, Self> {
+        Ok(JSONGetTextValue::parse_json(field.value).map_err(form::Error::custom)?)
     }
 }

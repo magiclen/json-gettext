@@ -8,6 +8,8 @@ extern crate rocket;
 #[macro_use]
 extern crate json_gettext;
 
+use std::error::Error;
+
 #[cfg(not(any(feature = "language", feature = "region", feature = "language_region_pair")))]
 use rocket::response::Redirect;
 
@@ -29,20 +31,20 @@ fn hello(ctx: State<JSONGetTextManager>, lang: String) -> String {
     format!("Ron: {}", get_text!(ctx, lang, "hello").unwrap().as_str().unwrap())
 }
 
-fn main() {
+#[rocket::main]
+async fn main() -> Result<(), Box<dyn Error>> {
     #[cfg(not(any(feature = "language", feature = "region", feature = "language_region_pair")))]
     {
-        rocket::ignite()
-            .attach(JSONGetTextManager::fairing(|| {
-                static_json_gettext_build_for_rocket!(
-                    "en_US",
-                    "en_US",
-                    "langs/en_US.json",
-                    "zh_TW",
-                    "langs/zh_TW.json"
-                )
-            }))
+        rocket::build()
+            .attach(static_json_gettext_build_for_rocket!(
+                "en_US";
+                "en_US" => "langs/en_US.json",
+                "zh_TW" => "langs/zh_TW.json",
+            ))
             .mount("/", routes![index, hello])
-            .launch();
+            .launch()
+            .await?;
     }
+
+    Ok(())
 }

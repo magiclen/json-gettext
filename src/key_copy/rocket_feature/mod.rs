@@ -15,17 +15,15 @@ pub use debug::*;
 #[cfg(not(debug_assertions))]
 pub use release::*;
 
-use rocket::http::RawStr;
-use rocket::request::{FromFormValue, FromParam};
+use rocket::form::{self, FromFormField, ValueField};
+use rocket::request::FromParam;
 
 use super::Key;
 
-impl<'a> FromFormValue<'a> for Key {
-    type Error = Box<dyn Error>;
-
-    #[inline]
-    fn from_form_value(v: &'a RawStr) -> Result<Self, Self::Error> {
-        Ok(Key::from_str(v)?)
+#[rocket::async_trait]
+impl<'v> FromFormField<'v> for Key {
+    fn from_value(field: ValueField<'v>) -> form::Result<'v, Self> {
+        Ok(Key::from_str(field.value).map_err(form::Error::custom)?)
     }
 }
 
@@ -33,7 +31,7 @@ impl<'a> FromParam<'a> for Key {
     type Error = Box<dyn Error>;
 
     #[inline]
-    fn from_param(v: &'a RawStr) -> Result<Self, Self::Error> {
+    fn from_param(v: &'a str) -> Result<Self, Self::Error> {
         Ok(Key::from_str(v)?)
     }
 }

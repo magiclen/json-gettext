@@ -12,11 +12,9 @@ use json_gettext::JSONGetTextValue;
 #[test]
 fn multiple_get() {
     let ctx = static_json_gettext_build!(
-        "en_US",
-        "en_US",
-        "langs/en_US.json",
-        "zh_TW",
-        "langs/zh_TW.json"
+        "en_US";
+        "en_US" => "langs/en_US.json",
+        "zh_TW" => "langs/zh_TW.json",
     )
     .unwrap();
 

@@ -7,6 +7,8 @@ extern crate rocket_accept_language;
 #[macro_use]
 extern crate json_gettext;
 
+use std::error::Error;
+
 use rocket::State;
 
 use rocket_accept_language::unic_langid::subtags::Language;
@@ -24,17 +26,17 @@ fn index(ctx: State<JSONGetTextManager>, accept_language: &AcceptLanguage) -> St
     format!("Ron: {}", get_text!(ctx, Key(language, region), "hello").unwrap().as_str().unwrap())
 }
 
-fn main() {
-    rocket::ignite()
-        .attach(JSONGetTextManager::fairing(|| {
-            static_json_gettext_build_for_rocket!(
-                key!("en"),
-                key!("en"),
-                "langs/en_US.json",
-                key!("zh_TW"),
-                "langs/zh_TW.json"
-            )
-        }))
+#[rocket::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    rocket::build()
+        .attach(static_json_gettext_build_for_rocket!(
+            key!("en");
+            key!("en") => "langs/en_US.json",
+            key!("zh_TW") => "langs/zh_TW.json",
+        ))
         .mount("/", routes![index])
-        .launch();
+        .launch()
+        .await?;
+
+    Ok(())
 }

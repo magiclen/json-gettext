@@ -11,9 +11,9 @@ This is a library for getting text from JSON usually for internationalization.
 #[macro_use] extern crate json_gettext;
 
 let ctx = static_json_gettext_build!(
-    "en_US",
-    "en_US", "langs/en_US.json",
-    "zh_TW", "langs/zh_TW.json"
+    "en_US";
+    "en_US" => "langs/en_US.json",
+    "zh_TW" => "langs/zh_TW.json"
 ).unwrap();
 
 assert_eq!("Hello, world!", get_text!(ctx, "hello").unwrap());
@@ -54,12 +54,11 @@ fn hello(ctx: State<JSONGetTextManager>, lang: String) -> String {
 
 fn main() {
     rocket::ignite()
-        .attach(JSONGetTextManager::fairing(|| {
-            static_json_gettext_build_for_rocket!("en_US",
-                "en_US", "langs/en_US.json",
-                "zh_TW", "langs/zh_TW.json"
-            )
-        }))
+        .attach(static_json_gettext_build_for_rocket!(
+            "en_US";
+            "en_US" => "langs/en_US.json",
+            "zh_TW" => "langs/zh_TW.json"
+        ))
         .mount("/", routes![index, hello])
         .launch();
 }
@@ -111,15 +110,11 @@ fn index(ctx: State<JSONGetTextManager>, accept_language: &AcceptLanguage) -> St
 
 fn main() {
     rocket::ignite()
-        .attach(JSONGetTextManager::fairing(|| {
-            static_json_gettext_build_for_rocket!(
-                key!("en"),
-                key!("en"),
-                "langs/en_US.json",
-                key!("zh_TW"),
-                "langs/zh_TW.json"
-            )
-        }))
+        .attach(static_json_gettext_build_for_rocket!(
+            key!("en");
+            key!("en") => "langs/en_US.json",
+            key!("zh_TW") => "langs/zh_TW.json",
+        ))
         .mount("/", routes![index])
         .launch();
 }

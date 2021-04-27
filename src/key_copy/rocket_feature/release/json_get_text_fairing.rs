@@ -5,7 +5,7 @@ use super::JSONGetTextManager;
 use crate::Key;
 
 use rocket::fairing::{Fairing, Info, Kind};
-use rocket::Rocket;
+use rocket::{Build, Rocket};
 
 const FAIRING_NAME: &str = "JSONGetText";
 
@@ -16,17 +16,18 @@ pub struct JSONGetTextFairing {
         Box<dyn Fn() -> (Key, Vec<(Key, &'static str)>) + Send + Sync + 'static>,
 }
 
+#[rocket::async_trait]
 impl Fairing for JSONGetTextFairing {
     #[inline]
     fn info(&self) -> Info {
         Info {
             name: FAIRING_NAME,
-            kind: Kind::Attach,
+            kind: Kind::Ignite,
         }
     }
 
     #[inline]
-    fn on_attach(&self, rocket: Rocket) -> Result<Rocket, Rocket> {
+    async fn on_ignite(&self, rocket: Rocket<Build>) -> Result<Rocket<Build>, Rocket<Build>> {
         let (default_key, source) = (self.custom_callback)();
 
         let state = JSONGetTextManager::from_jsons(default_key, source).unwrap();
