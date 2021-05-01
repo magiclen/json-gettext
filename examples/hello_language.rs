@@ -14,7 +14,7 @@ use rocket::State;
 use rocket_accept_language::unic_langid::subtags::Language;
 use rocket_accept_language::AcceptLanguage;
 
-use json_gettext::{JSONGetTextManager, JSONGetTextValue, Key};
+use json_gettext::{JSONGetTextManager, Key};
 
 const LANGUAGE_EN: Language = language!("en");
 
