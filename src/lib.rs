@@ -152,8 +152,11 @@ use mutate::DebuggableMutate;
 #[cfg(feature = "langid")]
 pub use key_copy::*;
 
-#[cfg(feature = "langid")]
+#[cfg(feature = "language_region_pair")]
 pub use unic_langid::LanguageIdentifierError;
+
+#[cfg(any(feature = "language", feature = "region"))]
+pub use unic_langid::parser::ParserError;
 
 #[cfg(not(feature = "langid"))]
 pub use key_string::*;

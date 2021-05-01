@@ -26,8 +26,19 @@ impl<'v> FromFormField<'v> for Key {
     }
 }
 
+#[cfg(feature = "language_region_pair")]
 impl<'a> FromParam<'a> for Key {
     type Error = crate::LanguageIdentifierError;
+
+    #[inline]
+    fn from_param(v: &'a str) -> Result<Self, Self::Error> {
+        Key::from_str(v)
+    }
+}
+
+#[cfg(any(feature = "language", feature = "region"))]
+impl<'a> FromParam<'a> for Key {
+    type Error = crate::ParserError;
 
     #[inline]
     fn from_param(v: &'a str) -> Result<Self, Self::Error> {
