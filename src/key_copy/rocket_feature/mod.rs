@@ -6,7 +6,6 @@ mod debug;
 #[cfg(not(debug_assertions))]
 mod release;
 
-use std::error::Error;
 use std::str::FromStr;
 
 #[cfg(debug_assertions)]
@@ -28,10 +27,10 @@ impl<'v> FromFormField<'v> for Key {
 }
 
 impl<'a> FromParam<'a> for Key {
-    type Error = Box<dyn Error>;
+    type Error = crate::LanguageIdentifierError;
 
     #[inline]
     fn from_param(v: &'a str) -> Result<Self, Self::Error> {
-        Ok(Key::from_str(v)?)
+        Key::from_str(v)
     }
 }
