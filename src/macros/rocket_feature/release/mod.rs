@@ -5,7 +5,7 @@ macro_rules! static_json_gettext_build_for_rocket {
             let mut v = Vec::new();
 
             $(
-                v.push(($key, include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", $path))));
+                v.push(($key, include_str!($crate::slash_formatter::concat_with_file_separator_debug_release!(env!("CARGO_MANIFEST_DIR"), $path))));
             )*
 
             ($default_key ,v)

@@ -26,7 +26,7 @@ macro_rules! static_json_gettext_build {
             let mut builder = $crate::JSONGetText::build($default_key);
 
             $(
-                builder.add_json($key, include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/", $path))).unwrap();
+                builder.add_json($key, include_str!($crate::slash_formatter::concat_with_file_separator_debug_release!(env!("CARGO_MANIFEST_DIR"), $path))).unwrap();
             )*
 
             builder.build()

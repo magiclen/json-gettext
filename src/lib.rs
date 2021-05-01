@@ -127,6 +127,9 @@ pub extern crate unic_langid;
 #[cfg(feature = "langid")]
 pub extern crate unic_langid_macros;
 
+#[doc(hidden)]
+pub extern crate slash_formatter;
+
 mod json_get_text_build_errors;
 mod macros;
 mod value;
