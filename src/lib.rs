@@ -128,7 +128,7 @@ pub extern crate unic_langid;
 pub extern crate unic_langid_macros;
 
 #[doc(hidden)]
-pub extern crate slash_formatter;
+pub extern crate manifest_dir_macros;
 
 mod json_get_text_build_errors;
 mod macros;
