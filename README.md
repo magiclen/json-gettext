@@ -54,7 +54,7 @@ fn hello(ctx: &State<JSONGetTextManager>, lang: String) -> String {
 
 #[launch]
 fn rocket() -> _ {
-    rocket::ignite()
+    rocket::build()
         .attach(static_json_gettext_build_for_rocket!(
             "en_US";
             "en_US" => "langs/en_US.json",
@@ -108,7 +108,7 @@ fn index(ctx: &State<JSONGetTextManager>, accept_language: &AcceptLanguage) -> S
 
 #[launch]
 fn rocket() -> _ {
-    rocket::ignite()
+    rocket::build()
         .attach(static_json_gettext_build_for_rocket!(
             key!("en");
             key!("en") => "langs/en_US.json",
