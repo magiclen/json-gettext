@@ -21,13 +21,13 @@ use json_gettext::JSONGetTextManager;
 
 #[cfg(not(any(feature = "language", feature = "region", feature = "language_region_pair")))]
 #[get("/")]
-fn index(ctx: State<JSONGetTextManager>) -> Redirect {
+fn index(ctx: &State<JSONGetTextManager>) -> Redirect {
     Redirect::temporary(uri!(hello: lang = ctx.get_default_key()))
 }
 
 #[cfg(not(any(feature = "language", feature = "region", feature = "language_region_pair")))]
 #[get("/<lang>")]
-fn hello(ctx: State<JSONGetTextManager>, lang: String) -> String {
+fn hello(ctx: &State<JSONGetTextManager>, lang: String) -> String {
     format!("Ron: {}", get_text!(ctx, lang, "hello").unwrap().as_str().unwrap())
 }
 

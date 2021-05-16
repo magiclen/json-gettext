@@ -7,7 +7,7 @@ use crate::Key;
 use rocket::data::Data;
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::request::Request;
-use rocket::{Build, Rocket, State};
+use rocket::{Build, Rocket};
 
 const FAIRING_NAME: &str = "JSONGetText (Debug)";
 
@@ -40,8 +40,8 @@ impl Fairing for JSONGetTextFairing {
     #[inline]
     async fn on_request(&self, req: &mut Request<'_>, _data: &mut Data) {
         let ctx = req
-            .guard::<State<JSONGetTextManager>>()
-            .await
+            .rocket()
+            .state::<JSONGetTextManager>()
             .expect("JSONGetTextManager registered in on_attach");
 
         ctx.reload_if_needed().unwrap();

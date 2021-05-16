@@ -19,7 +19,7 @@ use json_gettext::{JSONGetTextManager, Key};
 const LANGUAGE_EN: Language = language!("en");
 
 #[get("/")]
-fn index(ctx: State<JSONGetTextManager>, accept_language: &AcceptLanguage) -> String {
+fn index(ctx: &State<JSONGetTextManager>, accept_language: &AcceptLanguage) -> String {
     let language = accept_language.get_first_language().unwrap_or(LANGUAGE_EN);
 
     format!("Ron: {}", get_text!(ctx, Key(language), "hello").unwrap().as_str().unwrap())

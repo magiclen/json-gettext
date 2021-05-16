@@ -19,7 +19,7 @@ use json_gettext::{JSONGetTextManager, Key};
 const REGION_US: Region = region!("us");
 
 #[get("/")]
-fn index(ctx: State<JSONGetTextManager>, accept_language: &AcceptLanguage) -> String {
+fn index(ctx: &State<JSONGetTextManager>, accept_language: &AcceptLanguage) -> String {
     let region = accept_language.get_first_region().unwrap_or(REGION_US);
 
     format!("Ron: {}", get_text!(ctx, Key(region), "hello").unwrap().as_str().unwrap())
