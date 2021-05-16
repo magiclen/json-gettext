@@ -43,16 +43,17 @@ use rocket::response::Redirect;
 use json_gettext::JSONGetTextManager;
 
 #[get("/")]
-fn index(ctx: State<JSONGetTextManager>) -> Redirect {
+fn index(ctx: &State<JSONGetTextManager>) -> Redirect {
     Redirect::temporary(uri!(hello: lang = ctx.get_default_key()))
 }
 
 #[get("/<lang>")]
-fn hello(ctx: State<JSONGetTextManager>, lang: String) -> String {
+fn hello(ctx: &State<JSONGetTextManager>, lang: String) -> String {
     format!("Ron: {}", get_text!(ctx, lang, "hello").unwrap().as_str().unwrap())
 }
 
-fn main() {
+#[launch]
+fn rocket() -> _ {
     rocket::ignite()
         .attach(static_json_gettext_build_for_rocket!(
             "en_US";
@@ -60,7 +61,6 @@ fn main() {
             "zh_TW" => "langs/zh_TW.json"
         ))
         .mount("/", routes![index, hello])
-        .launch();
 }
 ```
 
@@ -81,8 +81,6 @@ features = ["language_region_pair", "rocket"]
 ```
 
 ```rust
-#![feature(proc_macro_hygiene, decl_macro)]
-
 #[macro_use]
 extern crate rocket;
 
@@ -102,13 +100,14 @@ use json_gettext::{JSONGetTextManager, Key};
 const LANGUAGE_EN: Language = language!("en");
 
 #[get("/")]
-fn index(ctx: State<JSONGetTextManager>, accept_language: &AcceptLanguage) -> String {
+fn index(ctx: &State<JSONGetTextManager>, accept_language: &AcceptLanguage) -> String {
     let (language, region) = accept_language.get_first_language_region().unwrap_or((LANGUAGE_EN, None));
 
     format!("Ron: {}", get_text!(ctx, Key(language, region), "hello").unwrap().as_str().unwrap())
 }
 
-fn main() {
+#[launch]
+fn rocket() -> _ {
     rocket::ignite()
         .attach(static_json_gettext_build_for_rocket!(
             key!("en");
@@ -116,7 +115,6 @@ fn main() {
             key!("zh_TW") => "langs/zh_TW.json",
         ))
         .mount("/", routes![index])
-        .launch();
 }
 ```
 
