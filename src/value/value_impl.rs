@@ -201,13 +201,13 @@ impl<'a> JSONGetTextValue<'a> {
             JSONGetTextValue::Str(s) => Some(s),
             JSONGetTextValue::JSONValue(v) => {
                 match v {
-                    Value::String(s) => Some(&s),
+                    Value::String(s) => Some(s),
                     _ => None,
                 }
             }
             JSONGetTextValue::JSONValueRef(v) => {
                 match v {
-                    Value::String(s) => Some(&s),
+                    Value::String(s) => Some(s),
                     _ => None,
                 }
             }
