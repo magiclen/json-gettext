@@ -22,7 +22,7 @@ use json_gettext::JSONGetTextManager;
 #[cfg(not(any(feature = "language", feature = "region", feature = "language_region_pair")))]
 #[get("/")]
 fn index(ctx: &State<JSONGetTextManager>) -> Redirect {
-    Redirect::temporary(uri!(hello: lang = ctx.get_default_key()))
+    Redirect::temporary(uri!(hello(lang = ctx.get_default_key())))
 }
 
 #[cfg(not(any(feature = "language", feature = "region", feature = "language_region_pair")))]
