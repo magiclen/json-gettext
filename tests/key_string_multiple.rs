@@ -3,8 +3,6 @@
 #[macro_use]
 extern crate json_gettext;
 
-extern crate serde_json;
-
 use std::collections::HashMap;
 
 use json_gettext::JSONGetTextValue;

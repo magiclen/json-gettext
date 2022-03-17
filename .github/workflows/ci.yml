@@ -28,7 +28,10 @@ jobs:
           toolchain: nightly
           override: true
           components: clippy
-      - run: cargo clippy -- -D warnings
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo clippy --all-targets --features language_region_pair -- -D warnings
+      - run: cargo clippy --all-targets --features language -- -D warnings
+      - run: cargo clippy --all-targets --features region -- -D warnings
 
   tests:
     strategy:

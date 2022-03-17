@@ -1,6 +1,3 @@
-extern crate json_gettext;
-extern crate serde_json;
-
 use json_gettext::JSONGetTextValue;
 
 #[test]

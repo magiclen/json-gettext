@@ -1,12 +1,10 @@
-extern crate serde;
-
-use serde::Serialize;
-
 use std::collections::HashMap;
 use std::fs::File;
 use std::path::Path;
 
-use crate::serde_json::{Map, Value};
+use serde::Serialize;
+use serde_json::{Map, Value};
+
 use crate::JSONGetTextBuildError;
 
 use super::{Context, JSONGetText, JSONGetTextValue};
