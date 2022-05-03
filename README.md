@@ -44,7 +44,7 @@ use json_gettext::JSONGetTextManager;
 
 #[get("/")]
 fn index(ctx: &State<JSONGetTextManager>) -> Redirect {
-    Redirect::temporary(uri!(hello: lang = ctx.get_default_key()))
+    Redirect::temporary(uri!(hello(lang = ctx.get_default_key())))
 }
 
 #[get("/<lang>")]
