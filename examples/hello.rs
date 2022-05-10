@@ -34,7 +34,7 @@ fn hello(ctx: &State<JSONGetTextManager>, lang: String) -> String {
 #[rocket::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     #[cfg(not(any(feature = "language", feature = "region", feature = "language_region_pair")))]
-    {
+    let _ = {
         rocket::build()
             .attach(static_json_gettext_build_for_rocket!(
                 "en_US";
@@ -43,8 +43,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             ))
             .mount("/", routes![index, hello])
             .launch()
-            .await?;
-    }
+            .await?
+    };
 
     Ok(())
 }
