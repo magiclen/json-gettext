@@ -218,9 +218,9 @@ impl<'a> JSONGetTextValue<'a> {
     #[inline]
     pub fn clone_borrowed(&self) -> JSONGetTextValue {
         match self {
-            JSONGetTextValue::Str(s) => JSONGetTextValue::Str(*s),
+            JSONGetTextValue::Str(s) => JSONGetTextValue::Str(s),
             JSONGetTextValue::JSONValue(v) => JSONGetTextValue::JSONValueRef(v),
-            JSONGetTextValue::JSONValueRef(v) => JSONGetTextValue::JSONValueRef(*v),
+            JSONGetTextValue::JSONValueRef(v) => JSONGetTextValue::JSONValueRef(v),
         }
     }
 }

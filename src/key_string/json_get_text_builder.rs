@@ -79,7 +79,7 @@ impl<'a> JSONGetTextBuilder<'a> {
 
         let path = path.as_ref();
 
-        let value: Map<String, Value> = serde_json::from_reader(File::open(&path)?)?;
+        let value: Map<String, Value> = serde_json::from_reader(File::open(path)?)?;
 
         let mut map: HashMap<String, JSONGetTextValue<'static>> =
             HashMap::with_capacity(value.len());
