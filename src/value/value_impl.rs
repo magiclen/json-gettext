@@ -25,7 +25,7 @@ use rocket::request::{FromParam, Request};
 use rocket::response::{self, Responder, Response};
 
 /// Represents any valid JSON value. Reference can also be wrapped.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum JSONGetTextValue<'a> {
     Str(&'a str),
     JSONValue(Value),
