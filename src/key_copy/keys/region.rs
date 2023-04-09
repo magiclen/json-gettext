@@ -1,9 +1,10 @@
-use std::fmt::{self, Display, Formatter};
-use std::ops::Deref;
-use std::str::FromStr;
+use std::{
+    fmt::{self, Display, Formatter},
+    ops::Deref,
+    str::FromStr,
+};
 
-use crate::unic_langid::parser::ParserError;
-use crate::unic_langid::subtags::Region;
+use crate::unic_langid::{parser::ParserError, subtags::Region};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Key(pub Region);

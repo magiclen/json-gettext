@@ -2,15 +2,14 @@ use std::collections::HashMap;
 
 use regex::Regex;
 
-use crate::{JSONGetTextBuildError, JSONGetTextValue};
-
 use super::{Context, JSONGetTextBuilder, Key};
+use crate::{JSONGetTextBuildError, JSONGetTextValue};
 
 /// A wrapper for context and a default key. **Keys** are usually considered as locales.
 #[derive(Debug)]
 pub struct JSONGetText<'a> {
     default_key: Key,
-    context: Context<'a>,
+    context:     Context<'a>,
 }
 
 impl<'a> JSONGetText<'a> {

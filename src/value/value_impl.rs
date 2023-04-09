@@ -3,19 +3,13 @@ extern crate serde;
 #[cfg(feature = "rocket")]
 extern crate rocket;
 
-use std::convert::TryFrom;
-use std::fmt::{self, Display, Formatter};
-use std::str::FromStr;
-
 #[cfg(feature = "rocket")]
 use std::io::Cursor;
-
-use super::JSONGetTextValueError;
-
-use crate::serde_json::{self, to_value, Map, Value};
-
-use serde::de::{Error as DeError, MapAccess, SeqAccess, Visitor};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::{
+    convert::TryFrom,
+    fmt::{self, Display, Formatter},
+    str::FromStr,
+};
 
 #[cfg(feature = "rocket")]
 use rocket::form::{self, FromFormField, ValueField};
@@ -23,6 +17,13 @@ use rocket::form::{self, FromFormField, ValueField};
 use rocket::request::{FromParam, Request};
 #[cfg(feature = "rocket")]
 use rocket::response::{self, Responder, Response};
+use serde::{
+    de::{Error as DeError, MapAccess, SeqAccess, Visitor},
+    Deserialize, Deserializer, Serialize, Serializer,
+};
+
+use super::JSONGetTextValueError;
+use crate::serde_json::{self, to_value, Map, Value};
 
 /// Represents any valid JSON value. Reference can also be wrapped.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -181,7 +182,7 @@ impl<'a> JSONGetTextValue<'a> {
                 string.push('"');
 
                 string
-            }
+            },
             JSONGetTextValue::JSONValue(v) => v.to_string(),
             JSONGetTextValue::JSONValueRef(v) => v.to_string(),
         }
@@ -199,18 +200,14 @@ impl<'a> JSONGetTextValue<'a> {
     pub fn as_str(&self) -> Option<&str> {
         match self {
             JSONGetTextValue::Str(s) => Some(s),
-            JSONGetTextValue::JSONValue(v) => {
-                match v {
-                    Value::String(s) => Some(s),
-                    _ => None,
-                }
-            }
-            JSONGetTextValue::JSONValueRef(v) => {
-                match v {
-                    Value::String(s) => Some(s),
-                    _ => None,
-                }
-            }
+            JSONGetTextValue::JSONValue(v) => match v {
+                Value::String(s) => Some(s),
+                _ => None,
+            },
+            JSONGetTextValue::JSONValueRef(v) => match v {
+                Value::String(s) => Some(s),
+                _ => None,
+            },
         }
     }
 
@@ -263,18 +260,14 @@ impl<'a> Display for JSONGetTextValue<'a> {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             JSONGetTextValue::Str(s) => s.fmt(f),
-            JSONGetTextValue::JSONValue(v) => {
-                match v.as_str() {
-                    Some(s) => s.fmt(f),
-                    None => v.fmt(f),
-                }
-            }
-            JSONGetTextValue::JSONValueRef(v) => {
-                match v.as_str() {
-                    Some(s) => s.fmt(f),
-                    None => v.fmt(f),
-                }
-            }
+            JSONGetTextValue::JSONValue(v) => match v.as_str() {
+                Some(s) => s.fmt(f),
+                None => v.fmt(f),
+            },
+            JSONGetTextValue::JSONValueRef(v) => match v.as_str() {
+                Some(s) => s.fmt(f),
+                None => v.fmt(f),
+            },
         }
     }
 }

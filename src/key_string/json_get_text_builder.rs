@@ -1,19 +1,16 @@
-use std::collections::HashMap;
-use std::fs::File;
-use std::path::Path;
+use std::{collections::HashMap, fs::File, path::Path};
 
 use serde::Serialize;
 use serde_json::{Map, Value};
 
-use crate::JSONGetTextBuildError;
-
 use super::{Context, JSONGetText, JSONGetTextValue};
+use crate::JSONGetTextBuildError;
 
 /// To build a JSONGetText instance, this struct can help you do that step by step.
 #[derive(Debug, Clone)]
 pub struct JSONGetTextBuilder<'a> {
     default_key: String,
-    context: Context<'a>,
+    context:     Context<'a>,
 }
 
 impl<'a> JSONGetTextBuilder<'a> {
@@ -21,8 +18,7 @@ impl<'a> JSONGetTextBuilder<'a> {
     #[inline]
     pub fn new<S: Into<String>>(default_key: S) -> JSONGetTextBuilder<'a> {
         JSONGetTextBuilder {
-            default_key: default_key.into(),
-            context: HashMap::new(),
+            default_key: default_key.into(), context: HashMap::new()
         }
     }
 
@@ -117,12 +113,12 @@ impl<'a> JSONGetTextBuilder<'a> {
                 self.context.insert(key.into().into(), map);
 
                 Ok(self)
-            }
+            },
             _ => {
                 serde_json::from_str::<Map<String, Value>>("\"MagicLen\"")?;
 
                 unreachable!()
-            }
+            },
         }
     }
 

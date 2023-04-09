@@ -9,12 +9,9 @@ extern crate json_gettext;
 
 use std::error::Error;
 
-use rocket::State;
-
-use rocket_accept_language::unic_langid::subtags::Language;
-use rocket_accept_language::AcceptLanguage;
-
 use json_gettext::{JSONGetTextManager, Key};
+use rocket::State;
+use rocket_accept_language::{unic_langid::subtags::Language, AcceptLanguage};
 
 const LANGUAGE_EN: Language = language!("en");
 

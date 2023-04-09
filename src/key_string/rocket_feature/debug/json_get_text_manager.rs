@@ -1,24 +1,26 @@
 extern crate rocket;
 
-use std::collections::HashMap;
-use std::mem;
-use std::ops::Deref;
-use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::SystemTime;
+use std::{
+    collections::HashMap,
+    mem,
+    ops::Deref,
+    path::{Path, PathBuf},
+    sync::atomic::{AtomicBool, Ordering},
+    time::SystemTime,
+};
+
+use rocket::fairing::Fairing;
 
 use crate::{
     DebuggableMutate, JSONGetText, JSONGetTextBuildError, JSONGetTextBuilder, JSONGetTextFairing,
 };
 
-use rocket::fairing::Fairing;
-
 #[derive(Debug)]
 pub struct JSONGetTextManager {
-    empty: JSONGetText<'static>,
+    empty:        JSONGetText<'static>,
     json_gettext: DebuggableMutate<JSONGetText<'static>>,
-    files: DebuggableMutate<HashMap<&'static str, (PathBuf, Option<SystemTime>)>>,
-    reloading: AtomicBool,
+    files:        DebuggableMutate<HashMap<&'static str, (PathBuf, Option<SystemTime>)>>,
+    reloading:    AtomicBool,
 }
 
 impl JSONGetTextManager {
@@ -47,10 +49,10 @@ impl JSONGetTextManager {
         empty_builder.add_map(default_key, HashMap::new())?;
 
         Ok(JSONGetTextManager {
-            empty: empty_builder.build()?,
+            empty:        empty_builder.build()?,
             json_gettext: DebuggableMutate::new(builder.build()?),
-            files: DebuggableMutate::new(files),
-            reloading: AtomicBool::new(false),
+            files:        DebuggableMutate::new(files),
+            reloading:    AtomicBool::new(false),
         })
     }
 
@@ -72,18 +74,14 @@ impl JSONGetTextManager {
                 })?;
 
                 let (reload, new_mtime) = match mtime {
-                    Some(mtime) => {
-                        match metadata.modified() {
-                            Ok(new_mtime) => (new_mtime > *mtime, Some(new_mtime)),
-                            Err(_) => (true, None),
-                        }
-                    }
-                    None => {
-                        match metadata.modified() {
-                            Ok(new_mtime) => (true, Some(new_mtime)),
-                            Err(_) => (true, None),
-                        }
-                    }
+                    Some(mtime) => match metadata.modified() {
+                        Ok(new_mtime) => (new_mtime > *mtime, Some(new_mtime)),
+                        Err(_) => (true, None),
+                    },
+                    None => match metadata.modified() {
+                        Ok(new_mtime) => (true, Some(new_mtime)),
+                        Err(_) => (true, None),
+                    },
                 };
 
                 if reload {
@@ -126,7 +124,7 @@ impl JSONGetTextManager {
     where
         F: Fn() -> (&'static str, Vec<(&'static str, &'static str)>) + Send + Sync + 'static, {
         JSONGetTextFairing {
-            custom_callback: Box::new(f),
+            custom_callback: Box::new(f)
         }
     }
 }

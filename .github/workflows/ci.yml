@@ -9,24 +9,19 @@ jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: nightly
-          override: true
           components: rustfmt
-      - run: cargo fmt -- --check
+      - uses: actions-rust-lang/rustfmt@v1
 
   clippy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          profile: minimal
-          toolchain: nightly
-          override: true
           components: clippy
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo clippy --all-targets --features language_region_pair -- -D warnings
@@ -42,41 +37,23 @@ jobs:
           - macos-latest
           - windows-latest
         toolchain:
+          - 1.63
+          - stable
           - nightly
-    name: Test ${{ matrix.toolchain }} on ${{ matrix.os }}
+        features:
+          -
+          - --features language_region_pair
+          - --features language
+          - --features region
+          - --features language_region_pair --features rocket
+          - --features language --features rocket
+          - --features region --features rocket
+    name: Test ${{ matrix.toolchain }} on ${{ matrix.os }} (${{ matrix.features }})
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: ${{ matrix.toolchain }}
-          override: true
-      - run: cargo build
-      - run: cargo build --examples
-      - run: cargo test
-      - run: cargo doc
-      - run: cargo build --features language_region_pair
-      - run: cargo build --examples --features language_region_pair
-      - run: cargo test --features language_region_pair
-      - run: cargo doc --features language_region_pair
-      - run: cargo build --features language
-      - run: cargo build --examples --features language
-      - run: cargo test --features language
-      - run: cargo doc --features language
-      - run: cargo build --features region
-      - run: cargo build --examples --features region
-      - run: cargo test --features region
-      - run: cargo doc --features region
-      - run: cargo build --features language_region_pair --features rocket
-      - run: cargo build --examples --features language_region_pair --features rocket
-      - run: cargo test --features language_region_pair --features rocket
-      - run: cargo doc --features language_region_pair --features rocket
-      - run: cargo build --features language --features rocket
-      - run: cargo build --examples --features language --features rocket
-      - run: cargo test --features language --features rocket
-      - run: cargo doc --features language --features rocket
-      - run: cargo build --features region --features rocket
-      - run: cargo build --examples --features region --features rocket
-      - run: cargo test --features region --features rocket
-      - run: cargo doc --features region --features rocket
+      - run: cargo test ${{ matrix.features }}
+      - run: cargo doc ${{ matrix.features }}

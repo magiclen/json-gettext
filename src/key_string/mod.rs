@@ -4,19 +4,19 @@ mod json_gettext;
 #[cfg(feature = "rocket")]
 mod rocket_feature;
 
-use std::borrow::Borrow;
-use std::collections::HashMap;
-use std::fmt::{self, Display, Formatter};
-use std::ops::Deref;
-
-use crate::JSONGetTextValue;
-
-pub use self::json_gettext::*;
+use std::{
+    borrow::Borrow,
+    collections::HashMap,
+    fmt::{self, Display, Formatter},
+    ops::Deref,
+};
 
 pub use json_get_text_builder::*;
-
 #[cfg(feature = "rocket")]
 pub use rocket_feature::*;
+
+pub use self::json_gettext::*;
+use crate::JSONGetTextValue;
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Key(pub String);

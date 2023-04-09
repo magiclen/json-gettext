@@ -1,6 +1,8 @@
-use std::cell::UnsafeCell;
-use std::fmt::Debug;
-use std::ops::{Deref, DerefMut};
+use std::{
+    cell::UnsafeCell,
+    fmt::Debug,
+    ops::{Deref, DerefMut},
+};
 
 #[derive(Debug)]
 pub(crate) struct DebuggableMutate<T: Debug> {
@@ -13,7 +15,7 @@ impl<T: Debug> DebuggableMutate<T> {
     #[inline]
     pub fn new(user_data: T) -> DebuggableMutate<T> {
         DebuggableMutate {
-            data: UnsafeCell::new(user_data),
+            data: UnsafeCell::new(user_data)
         }
     }
 

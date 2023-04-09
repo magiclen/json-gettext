@@ -10,12 +10,12 @@ use std::str::FromStr;
 
 #[cfg(debug_assertions)]
 pub use debug::*;
-
 #[cfg(not(debug_assertions))]
 pub use release::*;
-
-use rocket::form::{self, FromFormField, ValueField};
-use rocket::request::FromParam;
+use rocket::{
+    form::{self, FromFormField, ValueField},
+    request::FromParam,
+};
 
 use super::Key;
 

@@ -1,8 +1,12 @@
-use std::fmt::{self, Display, Formatter, Write};
-use std::str::FromStr;
+use std::{
+    fmt::{self, Display, Formatter, Write},
+    str::FromStr,
+};
 
-use crate::unic_langid::subtags::{Language, Region};
-use crate::unic_langid::{LanguageIdentifier, LanguageIdentifierError};
+use crate::unic_langid::{
+    subtags::{Language, Region},
+    LanguageIdentifier, LanguageIdentifierError,
+};
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Key(pub Language, pub Option<Region>);

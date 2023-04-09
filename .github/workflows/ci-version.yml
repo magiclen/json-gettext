@@ -18,41 +18,23 @@ jobs:
           - macos-latest
           - windows-latest
         toolchain:
+          - 1.63
+          - stable
           - nightly
-    name: Test ${{ matrix.toolchain }} on ${{ matrix.os }}
+        features:
+          -
+          - --features language_region_pair
+          - --features language
+          - --features region
+          - --features language_region_pair --features rocket
+          - --features language --features rocket
+          - --features region --features rocket
+    name: Test ${{ matrix.toolchain }} on ${{ matrix.os }} (${{ matrix.features }})
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v3
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          profile: minimal
           toolchain: ${{ matrix.toolchain }}
-          override: true
-      - run: cargo build --release
-      - run: cargo build --examples --release
-      - run: cargo test --release
-      - run: cargo doc --release
-      - run: cargo build --release --features language_region_pair
-      - run: cargo build --examples --release --features language_region_pair
-      - run: cargo test --release --features language_region_pair
-      - run: cargo doc --release --features language_region_pair
-      - run: cargo build --release --features language
-      - run: cargo build --examples --release --features language
-      - run: cargo test --release --features language
-      - run: cargo doc --release --features language
-      - run: cargo build --release --features region
-      - run: cargo build --examples --release --features region
-      - run: cargo test --release --features region
-      - run: cargo doc --release --features region
-      - run: cargo build --release --features language_region_pair --features rocket
-      - run: cargo build --examples --release --features language_region_pair --features rocket
-      - run: cargo test --release --features language_region_pair --features rocket
-      - run: cargo doc --release --features language_region_pair --features rocket
-      - run: cargo build --release --features language --features rocket
-      - run: cargo build --examples --release --features language --features rocket
-      - run: cargo test --release --features language --features rocket
-      - run: cargo doc --release --features language --features rocket
-      - run: cargo build --release --features region --features rocket
-      - run: cargo build --examples --release --features region --features rocket
-      - run: cargo test --release --features region --features rocket
-      - run: cargo doc --release --features region --features rocket
+      - run: cargo test --release ${{ matrix.features }}
+      - run: cargo doc --release ${{ matrix.features }}

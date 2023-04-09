@@ -1,18 +1,15 @@
-use std::error::Error;
-use std::fmt::{Display, Error as FmtError, Formatter};
-use std::io;
+use std::{
+    error::Error,
+    fmt::{Display, Error as FmtError, Formatter},
+    io,
+};
 
-use crate::serde_json::Error as JSONError;
-
-use crate::Key;
+use crate::{serde_json::Error as JSONError, Key};
 
 #[derive(Debug)]
 pub enum JSONGetTextBuildError {
     DefaultKeyNotFound,
-    TextInKeyNotInDefaultKey {
-        key: Key,
-        text: String,
-    },
+    TextInKeyNotInDefaultKey { key: Key, text: String },
     DuplicatedKey(Key),
     IOError(io::Error),
     SerdeJSONError(JSONError),
@@ -24,16 +21,14 @@ impl Display for JSONGetTextBuildError {
         match self {
             JSONGetTextBuildError::DefaultKeyNotFound => {
                 f.write_str("The default key is not found.")
-            }
+            },
             JSONGetTextBuildError::TextInKeyNotInDefaultKey {
                 key,
                 text,
-            } => {
-                f.write_fmt(format_args!(
-                    "The text `{}` in the key `{}` is not found in the default key.",
-                    text, key
-                ))
-            }
+            } => f.write_fmt(format_args!(
+                "The text `{}` in the key `{}` is not found in the default key.",
+                text, key
+            )),
             JSONGetTextBuildError::DuplicatedKey(key) => Display::fmt(key, f),
             JSONGetTextBuildError::IOError(err) => Display::fmt(err, f),
             JSONGetTextBuildError::SerdeJSONError(err) => Display::fmt(err, f),

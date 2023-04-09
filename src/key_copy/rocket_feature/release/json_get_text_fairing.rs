@@ -1,11 +1,12 @@
 extern crate rocket;
 
+use rocket::{
+    fairing::{Fairing, Info, Kind},
+    Build, Rocket,
+};
+
 use super::JSONGetTextManager;
-
 use crate::Key;
-
-use rocket::fairing::{Fairing, Info, Kind};
-use rocket::{Build, Rocket};
 
 const FAIRING_NAME: &str = "JSONGetText";
 
@@ -21,8 +22,7 @@ impl Fairing for JSONGetTextFairing {
     #[inline]
     fn info(&self) -> Info {
         Info {
-            name: FAIRING_NAME,
-            kind: Kind::Ignite,
+            name: FAIRING_NAME, kind: Kind::Ignite
         }
     }
 

@@ -2,9 +2,9 @@ extern crate rocket;
 
 use std::ops::Deref;
 
-use crate::{JSONGetText, JSONGetTextBuildError, JSONGetTextBuilder, JSONGetTextFairing};
-
 use rocket::fairing::Fairing;
+
+use crate::{JSONGetText, JSONGetTextBuildError, JSONGetTextBuilder, JSONGetTextFairing};
 
 #[derive(Debug)]
 pub struct JSONGetTextManager {
@@ -24,7 +24,7 @@ impl JSONGetTextManager {
         }
 
         Ok(JSONGetTextManager {
-            json_gettext: builder.build()?,
+            json_gettext: builder.build()?
         })
     }
 }
@@ -35,7 +35,7 @@ impl JSONGetTextManager {
     where
         F: Fn() -> (&'static str, Vec<(&'static str, &'static str)>) + Send + Sync + 'static, {
         JSONGetTextFairing {
-            custom_callback: Box::new(f),
+            custom_callback: Box::new(f)
         }
     }
 }
