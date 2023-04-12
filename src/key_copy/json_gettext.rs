@@ -22,6 +22,7 @@ impl<'a> JSONGetText<'a> {
     /// Create a new JSONGetText instance with context and a default key.
     pub(crate) fn from_context_with_default_key(
         default_key: Key,
+        ignore_extra_keys: bool,
         mut context: Context<'a>,
     ) -> Result<JSONGetText<'a>, JSONGetTextBuildError> {
         if !context.contains_key(&default_key) {
@@ -35,12 +36,17 @@ impl<'a> JSONGetText<'a> {
         {
             for (key, mut map) in context {
                 {
-                    for map_key in map.keys() {
-                        if !default_map.contains_key(map_key) {
-                            return Err(JSONGetTextBuildError::TextInKeyNotInDefaultKey {
-                                key,
-                                text: map_key.clone(),
-                            });
+                    if ignore_extra_keys {
+                        map =
+                            map.into_iter().filter(|(k, _)| default_map.contains_key(k)).collect();
+                    } else {
+                        for map_key in map.keys() {
+                            if !default_map.contains_key(map_key) {
+                                return Err(JSONGetTextBuildError::TextInKeyNotInDefaultKey {
+                                    key,
+                                    text: map_key.clone(),
+                                });
+                            }
                         }
                     }
                 }
