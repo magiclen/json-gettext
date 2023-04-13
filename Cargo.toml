@@ -9,7 +9,6 @@ homepage = "https://magiclen.org/json-gettext"
 keywords = ["json", "i18n", "multi-language", "static", "rocket"]
 categories = ["internationalization"]
 description = "A library for getting text from JSON usually for internationalization."
-readme = "README.md"
 license = "MIT"
 include = ["src/**/*", "Cargo.toml", "README.md", "LICENSE", "examples/*"]
 
