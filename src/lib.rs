@@ -135,7 +135,7 @@ mod value;
 #[cfg(all(debug_assertions, feature = "rocket"))]
 mod mutate;
 
-#[cfg(all(feature = "langid"))]
+#[cfg(feature = "langid")]
 mod key_copy;
 
 #[cfg(not(feature = "langid"))]
