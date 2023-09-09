@@ -1,9 +1,9 @@
 [package]
 name = "json-gettext"
-version = "4.0.5"
+version = "4.0.6"
 authors = ["Magic Len <len@magiclen.org>"]
 edition = "2021"
-rust-version = "1.63"
+rust-version = "1.67"
 repository = "https://github.com/magiclen/json-gettext"
 homepage = "https://magiclen.org/json-gettext"
 keywords = ["json", "i18n", "multi-language", "static", "rocket"]
