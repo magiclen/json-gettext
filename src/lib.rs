@@ -122,9 +122,6 @@ pub extern crate serde_json;
 #[cfg(feature = "langid")]
 pub extern crate unic_langid;
 
-#[cfg(feature = "langid")]
-pub extern crate unic_langid_macros;
-
 #[doc(hidden)]
 pub extern crate manifest_dir_macros;
 
