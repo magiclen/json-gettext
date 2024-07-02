@@ -138,8 +138,12 @@ impl<'a> JSONGetTextBuilder<'a> {
     }
 
     /// Build a `JSONGetText` instance.
-    pub fn build(self) -> Result<JSONGetText<'a>, JSONGetTextBuildError> {
-        JSONGetText::from_context_with_default_key(self.default_key, self.context)
+    pub fn build(self, ignore_extra_keys: bool) -> Result<JSONGetText<'a>, JSONGetTextBuildError> {
+        JSONGetText::from_context_with_default_key(
+            self.default_key,
+            ignore_extra_keys,
+            self.context,
+        )
     }
 }
 

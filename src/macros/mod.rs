@@ -29,7 +29,7 @@ macro_rules! static_json_gettext_build {
                 builder.add_json($key, include_str!($crate::manifest_dir_macros::path!($path))).unwrap();
             )*
 
-            builder.build()
+            builder.build(false)
         }
     };
 }

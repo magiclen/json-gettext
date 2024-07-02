@@ -22,6 +22,7 @@ impl<'a> JSONGetText<'a> {
     /// Create a new JSONGetText instance with context and a default key.
     pub(crate) fn from_context_with_default_key<S: AsRef<str> + Into<String>>(
         default_key: S,
+        ignore_extra_keys: bool,
         mut context: Context<'a>,
     ) -> Result<JSONGetText<'a>, JSONGetTextBuildError> {
         if !context.contains_key(default_key.as_ref()) {
@@ -37,25 +38,33 @@ impl<'a> JSONGetText<'a> {
         {
             for (key, mut map) in context {
                 {
-                    for map_key in map.keys() {
-                        if !default_map.contains_key(map_key) {
-                            return Err(JSONGetTextBuildError::TextInKeyNotInDefaultKey {
-                                key,
-                                text: map_key.clone(),
-                            });
+                    if ignore_extra_keys {
+                        map =
+                            map.into_iter().filter(|(k, _)| default_map.contains_key(k)).collect();
+                    } else {
+                        for map_key in map.keys() {
+                            if !default_map.contains_key(map_key) {
+                                return Err(JSONGetTextBuildError::TextInKeyNotInDefaultKey {
+                                    key,
+                                    text: map_key.clone(),
+                                });
+                            }
                         }
                     }
-                }
 
-                {
-                    for map_key in default_map.keys() {
-                        if !map.contains_key(map_key) {
-                            map.insert(map_key.clone(), default_map.get(map_key).unwrap().clone());
+                    {
+                        for map_key in default_map.keys() {
+                            if !map.contains_key(map_key) {
+                                map.insert(
+                                    map_key.clone(),
+                                    default_map.get(map_key).unwrap().clone(),
+                                );
+                            }
                         }
                     }
-                }
 
-                inner_context.insert(key, map);
+                    inner_context.insert(key, map);
+                }
             }
 
             inner_context.insert(default_key.clone().into(), default_map);
