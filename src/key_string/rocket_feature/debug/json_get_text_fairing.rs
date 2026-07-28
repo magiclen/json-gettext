@@ -1,10 +1,8 @@
-extern crate rocket;
-
 use rocket::{
+    Build, Rocket,
     data::Data,
     fairing::{Fairing, Info, Kind},
     request::Request,
-    Build, Rocket,
 };
 
 use super::JSONGetTextManager;

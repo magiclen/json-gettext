@@ -23,7 +23,7 @@ impl<'a> JSONGetTextBuilder<'a> {
         }
     }
 
-    /// Add a JSON string to the context for a specify key. The JSON string must represent a map object (key-value).
+    /// Add a JSON string to the context for a specific key. The JSON string must represent a map object (key-value).
     pub fn add_json<J: AsRef<str> + ?Sized>(
         &mut self,
         key: Key,
@@ -40,7 +40,7 @@ impl<'a> JSONGetTextBuilder<'a> {
         Ok(self)
     }
 
-    /// Add a JSON string to the context for a specify key. The JSON string must represent a map object (key-value).
+    /// Add a JSON string to the context for a specific key. The JSON string must represent a map object (key-value).
     pub fn add_json_owned<J: AsRef<str>>(
         &mut self,
         key: Key,
@@ -64,7 +64,7 @@ impl<'a> JSONGetTextBuilder<'a> {
         Ok(self)
     }
 
-    /// Add a JSON file to the context for a specify key. The JSON file must represent a map object (key-value).
+    /// Add a JSON file to the context for a specific key. The JSON file must represent a map object (key-value).
     pub fn add_json_file<P: AsRef<Path>>(
         &mut self,
         key: Key,
@@ -90,7 +90,7 @@ impl<'a> JSONGetTextBuilder<'a> {
         Ok(self)
     }
 
-    /// Add any serializable value to the context for a specify key. The value must represent a map object (key-value).
+    /// Add any serializable value to the context for a specific key. The value must represent a map object (key-value).
     pub fn add_serialize<S: Serialize>(
         &mut self,
         key: Key,
@@ -115,11 +115,7 @@ impl<'a> JSONGetTextBuilder<'a> {
 
                 Ok(self)
             },
-            _ => {
-                serde_json::from_str::<Map<String, Value>>("\"MagicLen\"")?;
-
-                unreachable!()
-            },
+            _ => Err(JSONGetTextBuildError::NotObject),
         }
     }
 

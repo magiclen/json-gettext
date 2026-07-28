@@ -4,8 +4,8 @@ use std::{
 };
 
 use crate::unic_langid::{
-    subtags::{Language, Region},
     LanguageIdentifier, LanguageIdentifierError,
+    subtags::{Language, Region},
 };
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]

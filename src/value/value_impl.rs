@@ -1,12 +1,7 @@
-extern crate serde;
-
-#[cfg(feature = "rocket")]
-extern crate rocket;
-
 #[cfg(feature = "rocket")]
 use std::io::Cursor;
 use std::{
-    convert::TryFrom,
+    convert::Infallible,
     fmt::{self, Display, Formatter},
     str::FromStr,
 };
@@ -158,41 +153,11 @@ impl<'a> JSONGetTextValue<'a> {
     /// Convert to a string for JSON format.
     pub fn to_json_string(&self) -> String {
         match self {
-            JSONGetTextValue::Str(s) => {
-                let mut string = String::with_capacity(s.len() + 2);
-                string.push('"');
-
-                let mut from = 0;
-
-                for (i, c) in s.char_indices() {
-                    let esc = c.escape_debug();
-
-                    if esc.len() != 1 {
-                        string.push_str(&s[from..i]);
-
-                        for c in esc {
-                            string.push(c);
-                        }
-
-                        from = i + c.len_utf8();
-                    }
-                }
-
-                string.push_str(&s[from..]);
-                string.push('"');
-
-                string
-            },
+            // `serde_json` applies proper JSON string escaping (e.g. control characters become `\u00XX`).
+            JSONGetTextValue::Str(s) => serde_json::to_string(s).unwrap(),
             JSONGetTextValue::JSONValue(v) => v.to_string(),
             JSONGetTextValue::JSONValueRef(v) => v.to_string(),
         }
-    }
-
-    #[deprecated(since = "3.2.0", note = "Please use the `to_json_string` function instead")]
-    /// Convert to a string for JSON format.
-    #[inline]
-    pub fn to_json(&self) -> String {
-        self.to_json_string()
     }
 
     /// Convert to a string slice if it is possible (if it is a string).
@@ -410,7 +375,7 @@ impl<'a> From<&'a Value> for JSONGetTextValue<'a> {
 }
 
 impl FromStr for JSONGetTextValue<'static> {
-    type Err = ();
+    type Err = Infallible;
 
     #[inline]
     fn from_str(s: &str) -> Result<Self, Self::Err> {

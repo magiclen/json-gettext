@@ -11,7 +11,7 @@ use std::error::Error;
 
 use json_gettext::{JSONGetTextManager, Key};
 use rocket::State;
-use rocket_accept_language::{unic_langid::subtags::Region, AcceptLanguage};
+use rocket_accept_language::{AcceptLanguage, unic_langid::subtags::Region};
 
 const REGION_US: Region = region!("us");
 

@@ -13,9 +13,9 @@ use std::error::Error;
 #[cfg(not(any(feature = "language", feature = "region", feature = "language_region_pair")))]
 use json_gettext::JSONGetTextManager;
 #[cfg(not(any(feature = "language", feature = "region", feature = "language_region_pair")))]
-use rocket::response::Redirect;
-#[cfg(not(any(feature = "language", feature = "region", feature = "language_region_pair")))]
 use rocket::State;
+#[cfg(not(any(feature = "language", feature = "region", feature = "language_region_pair")))]
+use rocket::response::Redirect;
 
 #[cfg(not(any(feature = "language", feature = "region", feature = "language_region_pair")))]
 #[get("/")]

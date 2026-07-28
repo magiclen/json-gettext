@@ -6,6 +6,7 @@ use std::{
 use crate::serde_json::Error as JSONError;
 
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum JSONGetTextValueError {
     IntegerOutOfRange,
     ParseError(JSONError),

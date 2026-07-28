@@ -4,13 +4,19 @@ use std::{
     io,
 };
 
-use crate::{serde_json::Error as JSONError, Key};
+use crate::{Key, serde_json::Error as JSONError};
 
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum JSONGetTextBuildError {
     DefaultKeyNotFound,
-    TextInKeyNotInDefaultKey { key: Key, text: String },
+    TextInKeyNotInDefaultKey {
+        key:  Key,
+        text: String,
+    },
     DuplicatedKey(Key),
+    /// The added value does not represent a JSON map object.
+    NotObject,
     IOError(io::Error),
     SerdeJSONError(JSONError),
 }
@@ -30,6 +36,9 @@ impl Display for JSONGetTextBuildError {
                 text, key
             )),
             JSONGetTextBuildError::DuplicatedKey(key) => Display::fmt(key, f),
+            JSONGetTextBuildError::NotObject => {
+                f.write_str("The added value does not represent a JSON map object.")
+            },
             JSONGetTextBuildError::IOError(err) => Display::fmt(err, f),
             JSONGetTextBuildError::SerdeJSONError(err) => Display::fmt(err, f),
         }

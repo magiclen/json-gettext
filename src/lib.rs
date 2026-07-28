@@ -145,8 +145,8 @@ pub use key_copy::*;
 pub use key_string::*;
 #[cfg(all(debug_assertions, feature = "rocket"))]
 use mutate::DebuggableMutate;
-#[cfg(any(feature = "language", feature = "region"))]
-pub use unic_langid::parser::ParserError;
 #[cfg(feature = "language_region_pair")]
 pub use unic_langid::LanguageIdentifierError;
+#[cfg(any(feature = "language", feature = "region"))]
+pub use unic_langid::parser::ParserError;
 pub use value::*;

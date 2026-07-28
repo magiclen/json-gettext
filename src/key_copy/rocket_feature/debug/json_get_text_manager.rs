@@ -1,5 +1,3 @@
-extern crate rocket;
-
 use std::{
     collections::HashMap,
     mem,
@@ -67,11 +65,9 @@ impl JSONGetTextManager {
 
             let files = self.files.get_mut();
 
-            for (_, (path, mtime)) in files.iter_mut() {
-                let metadata = path.metadata().map_err(|err| {
+            for (path, mtime) in files.values_mut() {
+                let metadata = path.metadata().inspect_err(|_| {
                     self.reloading.store(false, Ordering::Relaxed);
-
-                    err
                 })?;
 
                 let (reload, new_mtime) = match mtime {
@@ -96,17 +92,13 @@ impl JSONGetTextManager {
                 let mut builder = JSONGetTextBuilder::new(self.get_default_key());
 
                 for (&key, (path, _)) in files {
-                    builder.add_json_file(key, path).map_err(|err| {
+                    builder.add_json_file(key, path).inspect_err(|_| {
                         self.reloading.store(false, Ordering::Relaxed);
-
-                        err
                     })?;
                 }
 
-                let json_gettext = builder.build().map_err(|err| {
+                let json_gettext = builder.build().inspect_err(|_| {
                     self.reloading.store(false, Ordering::Relaxed);
-
-                    err
                 })?;
 
                 drop(mem::replace(self.json_gettext.get_mut(), json_gettext));
@@ -130,16 +122,12 @@ impl JSONGetTextManager {
     }
 }
 
-impl<'a> Deref for JSONGetTextManager {
+impl Deref for JSONGetTextManager {
     type Target = JSONGetText<'static>;
 
     #[inline]
     fn deref(&self) -> &JSONGetText<'static> {
-        // NOTICE: Not always safe!
-        if self.reloading.load(Ordering::Relaxed) {
-            &self.empty
-        } else {
-            self.json_gettext.get()
-        }
+        // NOTICE: This is only sound enough for debug-time hot-reloading, not a production concurrency guarantee. A reader here can still race with the reloader; the empty context is returned while reloading to reduce the window.
+        if self.reloading.load(Ordering::Relaxed) { &self.empty } else { self.json_gettext.get() }
     }
 }

@@ -1,5 +1,3 @@
-extern crate rocket;
-
 use std::ops::Deref;
 
 use rocket::fairing::Fairing;
@@ -40,7 +38,7 @@ impl JSONGetTextManager {
     }
 }
 
-impl<'a> Deref for JSONGetTextManager {
+impl Deref for JSONGetTextManager {
     type Target = JSONGetText<'static>;
 
     #[inline]

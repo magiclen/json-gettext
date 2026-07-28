@@ -4,6 +4,8 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
+/// A debug-only interior-mutability helper used to hot-reload the loaded JSON while serving requests.
+/// It allows mutation through a shared reference and is NOT a general concurrency-safe primitive: a concurrent reader and the reloader can still race, so it is only compiled in debug builds (never in release) and must be gated by an external reloading flag.
 #[derive(Debug)]
 pub(crate) struct DebuggableMutate<T: Debug> {
     data: UnsafeCell<T>,

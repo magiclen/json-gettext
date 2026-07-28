@@ -1,5 +1,3 @@
-extern crate rocket;
-
 #[cfg(debug_assertions)]
 mod debug;
 

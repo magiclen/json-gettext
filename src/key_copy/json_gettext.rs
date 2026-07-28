@@ -116,7 +116,7 @@ impl<'a> JSONGetText<'a> {
     pub fn get_multiple_text<'b, T: AsRef<str> + ?Sized>(
         &self,
         text_array: &[&'b T],
-    ) -> Option<HashMap<&'b str, JSONGetTextValue>> {
+    ) -> Option<HashMap<&'b str, JSONGetTextValue<'_>>> {
         let map = self.context.get(&self.default_key).unwrap();
 
         let mut new_map = HashMap::new();
