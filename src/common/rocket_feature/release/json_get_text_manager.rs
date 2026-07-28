@@ -12,8 +12,8 @@ pub struct JSONGetTextManager {
 impl JSONGetTextManager {
     #[inline]
     pub fn from_jsons(
-        default_key: &'static str,
-        source: Vec<(&'static str, &'static str)>,
+        default_key: crate::Key,
+        source: Vec<(crate::Key, &'static str)>,
     ) -> Result<JSONGetTextManager, JSONGetTextBuildError> {
         let mut builder = JSONGetTextBuilder::new(default_key);
 
@@ -31,7 +31,7 @@ impl JSONGetTextManager {
     /// Create the fairing of `JSONGetTextManager`.
     pub fn fairing<F>(f: F) -> impl Fairing
     where
-        F: Fn() -> (&'static str, Vec<(&'static str, &'static str)>) + Send + Sync + 'static, {
+        F: Fn() -> (crate::Key, Vec<(crate::Key, &'static str)>) + Send + Sync + 'static, {
         JSONGetTextFairing {
             custom_callback: Box::new(f)
         }

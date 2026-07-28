@@ -4,7 +4,6 @@ use rocket::{
 };
 
 use super::JSONGetTextManager;
-use crate::Key;
 
 const FAIRING_NAME: &str = "JSONGetText";
 
@@ -12,7 +11,7 @@ const FAIRING_NAME: &str = "JSONGetText";
 #[allow(clippy::type_complexity)]
 pub struct JSONGetTextFairing {
     pub(crate) custom_callback:
-        Box<dyn Fn() -> (Key, Vec<(Key, &'static str)>) + Send + Sync + 'static>,
+        Box<dyn Fn() -> (crate::Key, Vec<(crate::Key, &'static str)>) + Send + Sync + 'static>,
 }
 
 #[rocket::async_trait]

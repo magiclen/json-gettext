@@ -1,3 +1,4 @@
+// Only trait implementations for `Key` live here; nothing needs to be re-exported.
 #[cfg(feature = "rocket")]
 mod rocket_feature;
 
@@ -7,9 +8,6 @@ use std::{
     fmt::{self, Display, Formatter},
     ops::Deref,
 };
-
-#[cfg(feature = "rocket")]
-pub use rocket_feature::*;
 
 use crate::{IntoKey, LookupKey};
 
@@ -48,6 +46,13 @@ impl From<Key> for String {
     #[inline]
     fn from(key: Key) -> Self {
         key.0
+    }
+}
+
+impl From<&Key> for String {
+    #[inline]
+    fn from(key: &Key) -> Self {
+        key.0.clone()
     }
 }
 

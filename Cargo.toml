@@ -53,6 +53,7 @@ required-features = ["rocket", "language"]
 name = "hello_region"
 required-features = ["rocket", "region"]
 
+# `locale`, `language`, and `region` are mutually exclusive, so all-features cannot be used here.
 [package.metadata.docs.rs]
-all-features = true
+features = ["regex", "rocket"]
 rustdoc-args = ["--cfg", "docsrs"]

@@ -1,9 +1,14 @@
 mod json_get_text_builder;
 mod json_gettext;
 
+#[cfg(feature = "rocket")]
+mod rocket_feature;
+
 use std::collections::HashMap;
 
 pub use json_get_text_builder::*;
+#[cfg(feature = "rocket")]
+pub use rocket_feature::*;
 
 pub use self::json_gettext::*;
 use crate::JSONGetTextValue;

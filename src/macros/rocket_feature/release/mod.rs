@@ -5,10 +5,13 @@ macro_rules! static_json_gettext_build_for_rocket {
             let mut v = Vec::new();
 
             $(
-                v.push(($key, include_str!($crate::manifest_dir_macros::path!($path))));
+                v.push((
+                    $crate::IntoKey::into_key($key),
+                    include_str!($crate::manifest_dir_macros::path!($path)),
+                ));
             )*
 
-            ($default_key ,v)
+            ($crate::IntoKey::into_key($default_key), v)
         })
     };
 }
