@@ -78,7 +78,7 @@ pub type Context<'a> = HashMap<Key, HashMap<String, JSONGetTextValue<'a>>>;
 Create a literal key.
 
 ```rust
-#[macro_use] extern crate json_gettext;
+use json_gettext::key;
 
 let key = key!("en_US");
 

@@ -59,16 +59,15 @@ impl Deref for Key {
 Create a literal key.
 
 ```rust
-#[macro_use] extern crate json_gettext;
-
 use std::str::FromStr;
 
+use json_gettext::key;
 use json_gettext::unic_langid::subtags::Region;
 use json_gettext::Key;
 
-let key = key!("us");
+let key = key!("US");
 
-assert_eq!(Key(Region::from_str("us").unwrap()), key);
+assert_eq!(Key(Region::from_str("US").unwrap()), key);
 ```
 */
 #[macro_export]

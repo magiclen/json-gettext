@@ -43,10 +43,9 @@ impl FromStr for Key {
 Create a literal key.
 
 ```rust
-#[macro_use] extern crate json_gettext;
-
 use std::str::FromStr;
 
+use json_gettext::key;
 use json_gettext::unic_langid::subtags::{Language, Region};
 use json_gettext::Key;
 

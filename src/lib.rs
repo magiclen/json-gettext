@@ -6,7 +6,7 @@ This is a library for getting text from JSON usually for internationalization.
 ## Example
 
 ```rust,ignore
-#[macro_use] extern crate json_gettext;
+use json_gettext::{get_text, static_json_gettext_build};
 
 let ctx = static_json_gettext_build!(
     "en_US";
@@ -31,14 +31,11 @@ features = ["rocket"]
 Then, use the `static_json_gettext_build_for_rocket` macro instead of the `static_json_gettext_build` macro to build a `JSONGetText`(`JSONGetTextManager`).
 
 ```rust,ignore
-#[macro_use] extern crate json_gettext;
-
 #[macro_use] extern crate rocket;
 
+use json_gettext::{get_text, static_json_gettext_build_for_rocket, JSONGetTextManager};
 use rocket::State;
 use rocket::response::Redirect;
-
-use json_gettext::JSONGetTextManager;
 
 #[get("/")]
 fn index(ctx: &State<JSONGetTextManager>) -> Redirect {
@@ -85,15 +82,10 @@ extern crate rocket;
 #[macro_use]
 extern crate rocket_accept_language;
 
-#[macro_use]
-extern crate json_gettext;
-
+use json_gettext::{get_text, key, static_json_gettext_build_for_rocket, JSONGetTextManager, Key};
 use rocket::State;
-
 use rocket_accept_language::unic_langid::subtags::Language;
 use rocket_accept_language::AcceptLanguage;
-
-use json_gettext::{JSONGetTextManager, Key};
 
 const LANGUAGE_EN: Language = language!("en");
 
