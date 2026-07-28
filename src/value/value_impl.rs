@@ -383,8 +383,6 @@ impl FromStr for JSONGetTextValue<'static> {
     }
 }
 
-// TODO serde
-
 impl<'a> JSONGetTextValue<'a> {
     #[inline]
     pub fn parse_json<S: AsRef<str>>(
@@ -528,8 +526,6 @@ impl<'de> Deserialize<'de> for JSONGetTextValue<'de> {
         deserializer.deserialize_str(JSONGetTextValueVisitor)
     }
 }
-
-// TODO Rocket
 
 #[cfg(feature = "rocket")]
 impl<'r, 'o: 'r> Responder<'r, 'o> for JSONGetTextValue<'o> {

@@ -22,7 +22,15 @@ impl Display for JSONGetTextValueError {
     }
 }
 
-impl Error for JSONGetTextValueError {}
+impl Error for JSONGetTextValueError {
+    #[inline]
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            JSONGetTextValueError::ParseError(err) => Some(err),
+            _ => None,
+        }
+    }
+}
 
 impl From<JSONError> for JSONGetTextValueError {
     #[inline]

@@ -35,7 +35,9 @@ impl Display for JSONGetTextBuildError {
                 "The text `{}` in the key `{}` is not found in the default key.",
                 text, key
             )),
-            JSONGetTextBuildError::DuplicatedKey(key) => Display::fmt(key, f),
+            JSONGetTextBuildError::DuplicatedKey(key) => {
+                f.write_fmt(format_args!("The key `{key}` is duplicated."))
+            },
             JSONGetTextBuildError::NotObject => {
                 f.write_str("The added value does not represent a JSON map object.")
             },
@@ -45,7 +47,16 @@ impl Display for JSONGetTextBuildError {
     }
 }
 
-impl Error for JSONGetTextBuildError {}
+impl Error for JSONGetTextBuildError {
+    #[inline]
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            JSONGetTextBuildError::IOError(err) => Some(err),
+            JSONGetTextBuildError::SerdeJSONError(err) => Some(err),
+            _ => None,
+        }
+    }
+}
 
 impl From<io::Error> for JSONGetTextBuildError {
     #[inline]
