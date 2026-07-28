@@ -109,6 +109,8 @@ fn rocket() -> _ {
 ```
 */
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 pub extern crate serde_json;
 
 #[cfg(feature = "langid")]
