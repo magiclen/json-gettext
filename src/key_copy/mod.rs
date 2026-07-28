@@ -1,19 +1,33 @@
 use std::collections::HashMap;
 
-use crate::JSONGetTextValue;
-
-mod json_get_text_builder;
-mod json_gettext;
 mod keys;
 
 #[cfg(feature = "rocket")]
 mod rocket_feature;
 
-pub use json_get_text_builder::*;
 pub use keys::*;
 #[cfg(feature = "rocket")]
 pub use rocket_feature::*;
 
-pub use self::json_gettext::*;
+use crate::{IntoKey, LookupKey};
 
-pub type Context<'a> = HashMap<Key, HashMap<String, JSONGetTextValue<'a>>>;
+impl LookupKey for Key {
+    #[inline]
+    fn lookup<'m, V>(&self, map: &'m HashMap<Key, V>) -> Option<&'m V> {
+        map.get(self)
+    }
+}
+
+impl LookupKey for &Key {
+    #[inline]
+    fn lookup<'m, V>(&self, map: &'m HashMap<Key, V>) -> Option<&'m V> {
+        map.get(*self)
+    }
+}
+
+impl IntoKey for Key {
+    #[inline]
+    fn into_key(self) -> Key {
+        self
+    }
+}

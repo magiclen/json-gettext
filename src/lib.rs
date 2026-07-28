@@ -179,6 +179,7 @@ pub extern crate unic_langid;
 #[doc(hidden)]
 pub extern crate manifest_dir_macros;
 
+mod common;
 mod json_get_text_build_errors;
 mod macros;
 mod text_lookup;
@@ -193,6 +194,7 @@ mod key_copy;
 #[cfg(not(feature = "langid"))]
 mod key_string;
 
+pub use common::*;
 pub use json_get_text_build_errors::*;
 #[cfg(feature = "langid")]
 pub use key_copy::*;

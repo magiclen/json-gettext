@@ -11,14 +11,14 @@ type TextMap<'a> = HashMap<String, JSONGetTextValue<'a>>;
 /// Validate that every non-default key only contains texts that also exist in the default key.
 /// Each key keeps only its own texts; missing texts are resolved at lookup time by falling back to the default key.
 pub(crate) fn finalize_context<'a>(
-    default_key: Key,
+    default_key: &Key,
     mut context: Context<'a>,
 ) -> Result<Context<'a>, JSONGetTextBuildError> {
-    if !context.contains_key(&default_key) {
-        return Err(JSONGetTextBuildError::DefaultKeyNotFound);
-    }
-
-    let default_map = context.remove(&default_key).unwrap();
+    // Recover the owned key from the map so it can be re-inserted without cloning.
+    let (default_key, default_map) = match context.remove_entry(default_key) {
+        Some(entry) => entry,
+        None => return Err(JSONGetTextBuildError::DefaultKeyNotFound),
+    };
 
     let mut inner_context = HashMap::with_capacity(context.len() + 1);
 

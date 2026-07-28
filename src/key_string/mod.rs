@@ -1,6 +1,3 @@
-mod json_get_text_builder;
-mod json_gettext;
-
 #[cfg(feature = "rocket")]
 mod rocket_feature;
 
@@ -11,12 +8,10 @@ use std::{
     ops::Deref,
 };
 
-pub use json_get_text_builder::*;
 #[cfg(feature = "rocket")]
 pub use rocket_feature::*;
 
-pub use self::json_gettext::*;
-use crate::JSONGetTextValue;
+use crate::{IntoKey, LookupKey};
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Key(pub String);
@@ -49,6 +44,20 @@ impl From<String> for Key {
     }
 }
 
+impl From<Key> for String {
+    #[inline]
+    fn from(key: Key) -> Self {
+        key.0
+    }
+}
+
+impl AsRef<str> for Key {
+    #[inline]
+    fn as_ref(&self) -> &str {
+        self.0.as_str()
+    }
+}
+
 impl Borrow<str> for Key {
     #[inline]
     fn borrow(&self) -> &str {
@@ -72,22 +81,36 @@ impl Deref for Key {
     }
 }
 
-pub type Context<'a> = HashMap<Key, HashMap<String, JSONGetTextValue<'a>>>;
+// Anything that looks like a string can be used to look up a key.
+impl<S: AsRef<str>> LookupKey for S {
+    #[inline]
+    fn lookup<'m, V>(&self, map: &'m HashMap<Key, V>) -> Option<&'m V> {
+        map.get(self.as_ref())
+    }
+}
+
+// Anything that turns into a `String` can be used as a stored key.
+impl<S: Into<String>> IntoKey for S {
+    #[inline]
+    fn into_key(self) -> Key {
+        Key(self.into())
+    }
+}
 
 /**
 Create a literal key.
 
 ```rust
-use json_gettext::key;
+use json_gettext::{key, Key};
 
 let key = key!("en_US");
 
-assert_eq!(String::from("en_US"), key);
+assert_eq!(Key(String::from("en_US")), key);
 ```
 */
 #[macro_export]
 macro_rules! key {
     ($key:expr) => {
-        format!($key)
+        $crate::Key(format!($key))
     };
 }

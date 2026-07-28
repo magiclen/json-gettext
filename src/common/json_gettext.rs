@@ -3,31 +3,29 @@ use std::collections::{BTreeMap, HashMap};
 #[cfg(feature = "regex")]
 use regex::Regex;
 
-use super::{Context, JSONGetTextBuilder, Key};
+use super::{Context, IntoKey, JSONGetTextBuilder, LookupKey};
 use crate::{JSONGetTextBuildError, JSONGetTextValue, text_lookup};
 
 /// A wrapper for context and a default key. **Keys** are usually considered as locales.
 #[derive(Debug)]
 pub struct JSONGetText<'a> {
-    default_key: String,
+    default_key: crate::Key,
     context:     Context<'a>,
 }
 
 impl<'a> JSONGetText<'a> {
-    /// Create a new `JSONGetTextBuilder` instance. You need to decide your default key at the stage.
+    /// Create a new `JSONGetTextBuilder` instance. You need to decide your default key at this stage.
     #[inline]
-    pub fn build<S: Into<String>>(default_key: S) -> JSONGetTextBuilder<'a> {
+    pub fn build<K: IntoKey>(default_key: K) -> JSONGetTextBuilder<'a> {
         JSONGetTextBuilder::new(default_key)
     }
 
     /// Create a new JSONGetText instance with context and a default key.
-    pub(crate) fn from_context_with_default_key<S: Into<String>>(
-        default_key: S,
+    pub(crate) fn from_context_with_default_key(
+        default_key: crate::Key,
         context: Context<'a>,
     ) -> Result<JSONGetText<'a>, JSONGetTextBuildError> {
-        let default_key: String = default_key.into();
-
-        let context = text_lookup::finalize_context(Key::from(default_key.clone()), context)?;
+        let context = text_lookup::finalize_context(&default_key, context)?;
 
         Ok(JSONGetText {
             default_key,
@@ -35,49 +33,61 @@ impl<'a> JSONGetText<'a> {
         })
     }
 
+    /// Get the default key.
+    #[cfg(not(feature = "langid"))]
+    #[inline]
+    pub fn get_default_key(&self) -> &str {
+        self.default_key.as_str()
+    }
+
+    /// Get the default key.
+    #[cfg(feature = "langid")]
+    #[inline]
+    pub fn get_default_key(&self) -> crate::Key {
+        self.default_key
+    }
+
     /// Get all keys in context.
+    #[cfg(not(feature = "langid"))]
     pub fn get_keys(&self) -> Vec<&str> {
         self.context.keys().map(|key| key.as_str()).collect()
     }
 
-    /// Returns `true` if the context contains a value for the specified key.
-    #[inline]
-    pub fn contains_key<K: AsRef<str>>(&self, key: K) -> bool {
-        self.context.contains_key(key.as_ref())
+    /// Get all keys in context.
+    #[cfg(feature = "langid")]
+    pub fn get_keys(&self) -> Vec<crate::Key> {
+        self.context.keys().copied().collect()
     }
 
-    /// Get the default key.
+    /// Returns `true` if the context contains a value for the specified key.
     #[inline]
-    pub fn get_default_key(&self) -> &str {
-        &self.default_key
+    pub fn contains_key<K: LookupKey>(&self, key: K) -> bool {
+        key.lookup(&self.context).is_some()
     }
 
     /// Get the texts owned by a key. Missing texts are **not** filled in from the default key; the default key's map is returned only when the key itself is absent.
     #[inline]
-    pub fn get<K: AsRef<str>>(&self, key: K) -> &HashMap<String, JSONGetTextValue<'a>> {
-        match self.context.get(key.as_ref()) {
-            Some(m) => m,
-            None => self.context.get(&self.default_key).unwrap(),
-        }
+    pub fn get<K: LookupKey>(&self, key: K) -> &HashMap<String, JSONGetTextValue<'a>> {
+        key.lookup(&self.context).unwrap_or_else(|| self.default_map())
     }
 
     /// Get text from context.
     #[inline]
     pub fn get_text<T: AsRef<str>>(&self, text: T) -> Option<JSONGetTextValue<'_>> {
-        let map = self.context.get(&self.default_key).unwrap();
+        let map = self.default_map();
 
         text_lookup::get_text(map, map, text.as_ref())
     }
 
     /// Get text from context with a specific key, falling back to the default key when the text is missing.
     #[inline]
-    pub fn get_text_with_key<K: AsRef<str>, T: AsRef<str>>(
+    pub fn get_text_with_key<K: LookupKey, T: AsRef<str>>(
         &self,
         key: K,
         text: T,
     ) -> Option<JSONGetTextValue<'_>> {
-        let default_map = self.context.get(&self.default_key).unwrap();
-        let map = self.context.get(key.as_ref()).unwrap_or(default_map);
+        let default_map = self.default_map();
+        let map = key.lookup(&self.context).unwrap_or(default_map);
 
         text_lookup::get_text(map, default_map, text.as_ref())
     }
@@ -87,19 +97,19 @@ impl<'a> JSONGetText<'a> {
         &self,
         text_array: &[&'b T],
     ) -> Option<BTreeMap<&'b str, JSONGetTextValue<'_>>> {
-        let map = self.context.get(&self.default_key).unwrap();
+        let map = self.default_map();
 
         text_lookup::get_multiple_text(map, map, text_array)
     }
 
     /// Get multiple text from context with a specific key, falling back to the default key per text. The output map is usually used for serialization.
-    pub fn get_multiple_text_with_key<'b, K: AsRef<str>, T: AsRef<str> + ?Sized>(
+    pub fn get_multiple_text_with_key<'b, K: LookupKey, T: AsRef<str> + ?Sized>(
         &self,
         key: K,
         text_array: &[&'b T],
     ) -> Option<BTreeMap<&'b str, JSONGetTextValue<'_>>> {
-        let default_map = self.context.get(&self.default_key).unwrap();
-        let map = self.context.get(key.as_ref()).unwrap_or(default_map);
+        let default_map = self.default_map();
+        let map = key.lookup(&self.context).unwrap_or(default_map);
 
         text_lookup::get_multiple_text(map, default_map, text_array)
     }
@@ -107,23 +117,24 @@ impl<'a> JSONGetText<'a> {
     /// Get filtered text from context by a Regex instance. The output map is usually used for serialization.
     #[cfg(feature = "regex")]
     pub fn get_filtered_text(&self, regex: &Regex) -> Option<BTreeMap<&str, JSONGetTextValue<'_>>> {
-        let map = self.context.get(&self.default_key).unwrap();
-
-        Some(text_lookup::get_filtered_text(map, regex))
+        Some(text_lookup::get_filtered_text(self.default_map(), regex))
     }
 
     /// Get filtered text owned by a specific key by a Regex instance. Texts are not filled in from the default key. The output map is usually used for serialization.
     #[cfg(feature = "regex")]
-    pub fn get_filtered_text_with_key<K: AsRef<str>>(
+    pub fn get_filtered_text_with_key<K: LookupKey>(
         &self,
         key: K,
         regex: &Regex,
     ) -> Option<BTreeMap<&str, JSONGetTextValue<'_>>> {
-        let map = self
-            .context
-            .get(key.as_ref())
-            .unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
+        let map = key.lookup(&self.context).unwrap_or_else(|| self.default_map());
 
         Some(text_lookup::get_filtered_text(map, regex))
+    }
+
+    /// The map of texts owned by the default key. The default key is always present, so this never panics.
+    #[inline]
+    fn default_map(&self) -> &HashMap<String, JSONGetTextValue<'a>> {
+        self.context.get(&self.default_key).unwrap()
     }
 }
