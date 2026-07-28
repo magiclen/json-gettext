@@ -65,7 +65,7 @@ If you are not using the `release` profile, `JSONGetTextManager` can reload the 
 
 ## `unic-langid` Support
 
-Since string comparison could be slow, the `language_region_pair` feature, the `language` feature or the `region` feature can be enabled to change key's type to `(Language, Option<Region>)`, `Language` or `Region` respectively where `Language` and `Region` structs are in the `unic-langid` crate.
+Since string comparison could be slow, the `locale` feature, the `language` feature or the `region` feature can be enabled to change key's type to `(Language, Option<Region>)`, `Language` or `Region` respectively where `Language` and `Region` structs are in the `unic-langid` crate.
 
 In this case, the `key!` macro would be useful for generating a `Key` instance from a literal string.
 
@@ -74,7 +74,7 @@ For example,
 ```toml
 [dependencies.json-gettext]
 version = "*"
-features = ["language_region_pair", "rocket"]
+features = ["locale", "rocket"]
 ```
 
 ```rust

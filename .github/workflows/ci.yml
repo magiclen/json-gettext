@@ -25,12 +25,12 @@ jobs:
           components: clippy
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo clippy --all-targets --features regex -- -D warnings
-      - run: cargo clippy --all-targets --features language_region_pair -- -D warnings
-      - run: cargo clippy --all-targets --features language_region_pair --features regex -- -D warnings
+      - run: cargo clippy --all-targets --features locale -- -D warnings
+      - run: cargo clippy --all-targets --features locale --features regex -- -D warnings
       - run: cargo clippy --all-targets --features language -- -D warnings
       - run: cargo clippy --all-targets --features region -- -D warnings
       - run: cargo clippy --all-targets --features rocket -- -D warnings
-      - run: cargo clippy --all-targets --features language_region_pair --features rocket -- -D warnings
+      - run: cargo clippy --all-targets --features locale --features rocket -- -D warnings
       - run: cargo clippy --all-targets --features language --features rocket -- -D warnings
       - run: cargo clippy --all-targets --features region --features rocket -- -D warnings
 
@@ -48,11 +48,11 @@ jobs:
         features:
           -
           - --features regex
-          - --features language_region_pair
-          - --features language_region_pair --features regex
+          - --features locale
+          - --features locale --features regex
           - --features language
           - --features region
-          - --features language_region_pair --features rocket
+          - --features locale --features rocket
           - --features language --features rocket
           - --features region --features rocket
     name: Test ${{ matrix.toolchain }} on ${{ matrix.os }} (${{ matrix.features }})
@@ -78,11 +78,11 @@ jobs:
         features:
           -
           - --features regex
-          - --features language_region_pair
-          - --features language_region_pair --features regex
+          - --features locale
+          - --features locale --features regex
           - --features language
           - --features region
-          - --features language_region_pair --features rocket
+          - --features locale --features rocket
           - --features language --features rocket
           - --features region --features rocket
     name: Test ${{ matrix.toolchain }} on ${{ matrix.os }} (${{ matrix.features }})

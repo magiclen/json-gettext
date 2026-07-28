@@ -24,7 +24,7 @@ impl<'v> FromFormField<'v> for Key {
     }
 }
 
-#[cfg(feature = "language_region_pair")]
+#[cfg(feature = "locale")]
 impl<'a> FromParam<'a> for Key {
     type Error = crate::LanguageIdentifierError;
 

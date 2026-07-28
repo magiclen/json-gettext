@@ -1,5 +1,5 @@
-#[cfg(feature = "language_region_pair")]
-mod language_region_pair;
+#[cfg(feature = "locale")]
+mod locale;
 
 #[cfg(feature = "language")]
 mod language;
@@ -9,7 +9,7 @@ mod region;
 
 #[cfg(feature = "language")]
 pub use language::*;
-#[cfg(feature = "language_region_pair")]
-pub use language_region_pair::*;
+#[cfg(feature = "locale")]
+pub use locale::*;
 #[cfg(feature = "region")]
 pub use region::*;

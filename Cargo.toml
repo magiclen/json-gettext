@@ -26,8 +26,9 @@ rocket = { version = "0.5", optional = true }
 rocket-accept-language = "0.9"
 
 [features]
+# `langid` is an internal umbrella feature; enable `locale`, `language`, or `region` instead.
 langid = ["dep:unic-langid"]
-language_region_pair = ["langid"]
+locale = ["langid"]
 language = ["langid"]
 region = ["langid"]
 
@@ -41,8 +42,8 @@ name = "hello"
 required-features = ["rocket"]
 
 [[example]]
-name = "hello_language_region_pair"
-required-features = ["rocket", "language_region_pair"]
+name = "hello_locale"
+required-features = ["rocket", "locale"]
 
 [[example]]
 name = "hello_language"

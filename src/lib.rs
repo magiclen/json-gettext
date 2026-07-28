@@ -63,7 +63,7 @@ If you are not using the `release` profile, `JSONGetTextManager` can reload the 
 
 ## `unic-langid` Support
 
-Since string comparison could be slow, the `language_region_pair` feature, the `language` feature or the `region` feature can be enabled to change key's type to `(Language, Option<Region>)`, `Language` or `Region` respectively where `Language` and `Region` structs are in the `unic-langid` crate.
+Since string comparison could be slow, the `locale` feature, the `language` feature or the `region` feature can be enabled to change key's type to `(Language, Option<Region>)`, `Language` or `Region` respectively where `Language` and `Region` structs are in the `unic-langid` crate.
 
 In this case, the `key!` macro would be useful for generating a `Key` instance from a literal string.
 
@@ -72,7 +72,7 @@ For example,
 ```toml
 [dependencies.json-gettext]
 version = "*"
-features = ["language_region_pair", "rocket"]
+features = ["locale", "rocket"]
 ```
 
 ```rust,ignore
@@ -111,6 +111,26 @@ fn rocket() -> _ {
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+// The `locale`, `language`, and `region` features each redefine the `Key` type, so at most one may be enabled.
+#[cfg(any(
+    all(feature = "locale", feature = "language"),
+    all(feature = "locale", feature = "region"),
+    all(feature = "language", feature = "region"),
+))]
+compile_error!(
+    "The `locale`, `language`, and `region` features are mutually exclusive; enable at most one."
+);
+
+// `langid` is only an internal umbrella feature; enabling it alone leaves the `Key` type undefined.
+#[cfg(all(
+    feature = "langid",
+    not(any(feature = "locale", feature = "language", feature = "region"))
+))]
+compile_error!(
+    "Enable one of the `locale`, `language`, or `region` features instead of enabling `langid` \
+     directly."
+);
+
 pub extern crate serde_json;
 
 #[cfg(feature = "langid")]
@@ -140,7 +160,7 @@ pub use key_copy::*;
 pub use key_string::*;
 #[cfg(all(debug_assertions, feature = "rocket"))]
 use mutate::DebuggableMutate;
-#[cfg(feature = "language_region_pair")]
+#[cfg(feature = "locale")]
 pub use unic_langid::LanguageIdentifierError;
 #[cfg(any(feature = "language", feature = "region"))]
 pub use unic_langid::parser::ParserError;
