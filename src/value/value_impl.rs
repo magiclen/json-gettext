@@ -29,9 +29,9 @@ pub enum JSONGetTextValue<'a> {
 }
 
 impl<'a> JSONGetTextValue<'a> {
+    /// Wrap a borrowed string slice without copying. Use `from_string` to store an owned string instead.
     #[inline]
-    #[allow(clippy::should_implement_trait)]
-    pub fn from_str<S: AsRef<str> + ?Sized>(s: &'a S) -> JSONGetTextValue<'a> {
+    pub fn from_str_ref<S: AsRef<str> + ?Sized>(s: &'a S) -> JSONGetTextValue<'a> {
         JSONGetTextValue::Str(s.as_ref())
     }
 
@@ -176,6 +176,46 @@ impl<'a> JSONGetTextValue<'a> {
         }
     }
 
+    /// Get the wrapped `serde_json::Value` if this is not a borrowed string slice.
+    #[inline]
+    pub fn as_json_value(&self) -> Option<&Value> {
+        match self {
+            JSONGetTextValue::Str(_) => None,
+            JSONGetTextValue::JSONValue(v) => Some(v),
+            JSONGetTextValue::JSONValueRef(v) => Some(v),
+        }
+    }
+
+    /// Get the boolean if it is a boolean.
+    #[inline]
+    pub fn as_bool(&self) -> Option<bool> {
+        self.as_json_value().and_then(Value::as_bool)
+    }
+
+    /// Get the value as an `i64` if it is an integer that fits.
+    #[inline]
+    pub fn as_i64(&self) -> Option<i64> {
+        self.as_json_value().and_then(Value::as_i64)
+    }
+
+    /// Get the value as a `u64` if it is an integer that fits.
+    #[inline]
+    pub fn as_u64(&self) -> Option<u64> {
+        self.as_json_value().and_then(Value::as_u64)
+    }
+
+    /// Get the value as an `f64` if it is a number.
+    #[inline]
+    pub fn as_f64(&self) -> Option<f64> {
+        self.as_json_value().and_then(Value::as_f64)
+    }
+
+    /// Returns `true` if this value is JSON `null`.
+    #[inline]
+    pub fn is_null(&self) -> bool {
+        matches!(self.as_json_value(), Some(Value::Null))
+    }
+
     /// Clone the reference of this `JSONGetTextValue` instance.
     #[inline]
     pub fn clone_borrowed(&self) -> JSONGetTextValue<'_> {
@@ -240,7 +280,7 @@ impl<'a> Display for JSONGetTextValue<'a> {
 impl<'a> From<&'a str> for JSONGetTextValue<'a> {
     #[inline]
     fn from(v: &'a str) -> JSONGetTextValue<'a> {
-        JSONGetTextValue::from_str(v)
+        JSONGetTextValue::from_str_ref(v)
     }
 }
 
@@ -468,7 +508,7 @@ impl<'de> Visitor<'de> for JSONGetTextValueVisitor {
     fn visit_borrowed_str<E>(self, v: &'de str) -> Result<JSONGetTextValue<'de>, E>
     where
         E: DeError, {
-        Ok(JSONGetTextValue::from_str(v))
+        Ok(JSONGetTextValue::from_str_ref(v))
     }
 
     #[inline]
