@@ -18,12 +18,12 @@ use rocket::request::{FromParam, Request};
 #[cfg(feature = "rocket")]
 use rocket::response::{self, Responder, Response};
 use serde::{
-    de::{Error as DeError, MapAccess, SeqAccess, Visitor},
     Deserialize, Deserializer, Serialize, Serializer,
+    de::{Error as DeError, MapAccess, SeqAccess, Visitor},
 };
 
 use super::JSONGetTextValueError;
-use crate::serde_json::{self, to_value, Map, Value};
+use crate::serde_json::{self, Map, Value, to_value};
 
 /// Represents any valid JSON value. Reference can also be wrapped.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -213,7 +213,7 @@ impl<'a> JSONGetTextValue<'a> {
 
     /// Clone the reference of this `JSONGetTextValue` instance.
     #[inline]
-    pub fn clone_borrowed(&self) -> JSONGetTextValue {
+    pub fn clone_borrowed(&self) -> JSONGetTextValue<'_> {
         match self {
             JSONGetTextValue::Str(s) => JSONGetTextValue::Str(s),
             JSONGetTextValue::JSONValue(v) => JSONGetTextValue::JSONValueRef(v),
@@ -447,18 +447,18 @@ struct JSONGetTextValueVisitor;
 impl<'de> Visitor<'de> for JSONGetTextValueVisitor {
     type Value = JSONGetTextValue<'de>;
 
-    serde::serde_if_integer128! {
-        #[inline]
-        fn visit_i128<E>(self, v: i128) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
-            JSONGetTextValue::from_i128(v).map_err(DeError::custom)
-        }
+    #[inline]
+    fn visit_i128<E>(self, v: i128) -> Result<JSONGetTextValue<'static>, E>
+    where
+        E: DeError, {
+        JSONGetTextValue::from_i128(v).map_err(DeError::custom)
     }
 
-    serde::serde_if_integer128! {
-        #[inline]
-        fn visit_u128<E>(self, v: u128) -> Result<JSONGetTextValue<'static>, E> where E: DeError {
-            JSONGetTextValue::from_u128(v).map_err(DeError::custom)
-        }
+    #[inline]
+    fn visit_u128<E>(self, v: u128) -> Result<JSONGetTextValue<'static>, E>
+    where
+        E: DeError, {
+        JSONGetTextValue::from_u128(v).map_err(DeError::custom)
     }
 
     #[inline]

@@ -2,15 +2,15 @@
 name = "json-gettext"
 version = "4.0.10"
 authors = ["Magic Len <len@magiclen.org>"]
-edition = "2021"
-rust-version = "1.69"
+edition = "2024"
+rust-version = "1.88"
 repository = "https://github.com/magiclen/json-gettext"
 homepage = "https://magiclen.org/json-gettext"
 keywords = ["json", "i18n", "multi-language", "static", "rocket"]
 categories = ["internationalization"]
 description = "A library for getting text from JSON usually for internationalization."
 license = "MIT"
-include = ["src/**/*", "Cargo.toml", "README.md", "LICENSE", "examples/*"]
+include = ["src/**/*", "Cargo.toml", "README.md", "LICENSE"]
 
 [dependencies]
 serde = "1"
