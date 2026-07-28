@@ -21,7 +21,7 @@ assert_eq!("Hello, world!", get_text!(ctx, "hello").unwrap());
 assert_eq!("哈囉，世界！", get_text!(ctx, "zh_TW", "hello").unwrap());
 ```
 
-The argument before `;` is the **default key**. Every other key may only contain text names that also exist in the default key; this is checked when the context is built.
+The argument before `;` is the **default key**. Every other key may only contain text names that also exist in the default key; this is checked when the context is built. To drop such extra texts instead of failing, build with [`JSONGetTextBuilder`] and call `allow_extra_texts(true)`.
 
 ## Looking Up Texts
 

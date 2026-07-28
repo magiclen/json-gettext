@@ -10,9 +10,11 @@ type TextMap<'a> = HashMap<String, JSONGetTextValue<'a>>;
 
 /// Validate that every non-default key only contains texts that also exist in the default key.
 /// Each key keeps only its own texts; missing texts are resolved at lookup time by falling back to the default key.
+/// When `allow_extra_texts` is `true`, texts that the default key does not define are dropped instead of causing an error.
 pub(crate) fn finalize_context<'a>(
     default_key: &Key,
     mut context: Context<'a>,
+    allow_extra_texts: bool,
 ) -> Result<Context<'a>, JSONGetTextBuildError> {
     // Recover the owned key from the map so it can be re-inserted without cloning.
     let (default_key, default_map) = match context.remove_entry(default_key) {
@@ -22,13 +24,17 @@ pub(crate) fn finalize_context<'a>(
 
     let mut inner_context = HashMap::with_capacity(context.len() + 1);
 
-    for (key, map) in context {
-        for map_key in map.keys() {
-            if !default_map.contains_key(map_key) {
-                return Err(JSONGetTextBuildError::TextInKeyNotInDefaultKey {
-                    key,
-                    text: map_key.clone(),
-                });
+    for (key, mut map) in context {
+        if allow_extra_texts {
+            map.retain(|text, _| default_map.contains_key(text));
+        } else {
+            for map_key in map.keys() {
+                if !default_map.contains_key(map_key) {
+                    return Err(JSONGetTextBuildError::TextInKeyNotInDefaultKey {
+                        key,
+                        text: map_key.clone(),
+                    });
+                }
             }
         }
 

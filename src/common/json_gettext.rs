@@ -24,8 +24,9 @@ impl<'a> JSONGetText<'a> {
     pub(crate) fn from_context_with_default_key(
         default_key: crate::Key,
         context: Context<'a>,
+        allow_extra_texts: bool,
     ) -> Result<JSONGetText<'a>, JSONGetTextBuildError> {
-        let context = text_lookup::finalize_context(&default_key, context)?;
+        let context = text_lookup::finalize_context(&default_key, context, allow_extra_texts)?;
 
         Ok(JSONGetText {
             default_key,

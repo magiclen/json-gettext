@@ -9,8 +9,9 @@ use crate::{JSONGetTextBuildError, JSONGetTextValue};
 /// To build a JSONGetText instance, this struct can help you do that step by step.
 #[derive(Debug, Clone)]
 pub struct JSONGetTextBuilder<'a> {
-    default_key: crate::Key,
-    context:     Context<'a>,
+    default_key:       crate::Key,
+    context:           Context<'a>,
+    allow_extra_texts: bool,
 }
 
 impl<'a> JSONGetTextBuilder<'a> {
@@ -18,8 +19,19 @@ impl<'a> JSONGetTextBuilder<'a> {
     #[inline]
     pub fn new<K: IntoKey>(default_key: K) -> JSONGetTextBuilder<'a> {
         JSONGetTextBuilder {
-            default_key: default_key.into_key(), context: HashMap::new()
+            default_key:       default_key.into_key(),
+            context:           HashMap::new(),
+            allow_extra_texts: false,
         }
+    }
+
+    /// Set whether a non-default key may contain texts that the default key does not define.
+    /// When enabled, such texts are dropped while building instead of causing a `TextInKeyNotInDefaultKey` error.
+    #[inline]
+    pub fn allow_extra_texts(&mut self, allow: bool) -> &mut Self {
+        self.allow_extra_texts = allow;
+
+        self
     }
 
     /// Add a JSON string to the context for a specific key. The JSON string must represent a map object (key-value).
@@ -145,7 +157,11 @@ impl<'a> JSONGetTextBuilder<'a> {
 
     /// Build a `JSONGetText` instance.
     pub fn build(self) -> Result<JSONGetText<'a>, JSONGetTextBuildError> {
-        JSONGetText::from_context_with_default_key(self.default_key, self.context)
+        JSONGetText::from_context_with_default_key(
+            self.default_key,
+            self.context,
+            self.allow_extra_texts,
+        )
     }
 }
 
