@@ -22,7 +22,9 @@ jobs:
           - nightly
         features:
           -
+          - --features regex
           - --features language_region_pair
+          - --features language_region_pair --features regex
           - --features language
           - --features region
           - --features language_region_pair --features rocket
@@ -50,7 +52,9 @@ jobs:
           - 1.88
         features:
           -
+          - --features regex
           - --features language_region_pair
+          - --features language_region_pair --features regex
           - --features language
           - --features region
           - --features language_region_pair --features rocket

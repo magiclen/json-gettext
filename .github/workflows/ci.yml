@@ -24,7 +24,9 @@ jobs:
         with:
           components: clippy
       - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo clippy --all-targets --features regex -- -D warnings
       - run: cargo clippy --all-targets --features language_region_pair -- -D warnings
+      - run: cargo clippy --all-targets --features language_region_pair --features regex -- -D warnings
       - run: cargo clippy --all-targets --features language -- -D warnings
       - run: cargo clippy --all-targets --features region -- -D warnings
       - run: cargo clippy --all-targets --features rocket -- -D warnings
@@ -45,7 +47,9 @@ jobs:
           - nightly
         features:
           -
+          - --features regex
           - --features language_region_pair
+          - --features language_region_pair --features regex
           - --features language
           - --features region
           - --features language_region_pair --features rocket
@@ -73,7 +77,9 @@ jobs:
           - 1.88
         features:
           -
+          - --features regex
           - --features language_region_pair
+          - --features language_region_pair --features regex
           - --features language
           - --features region
           - --features language_region_pair --features rocket

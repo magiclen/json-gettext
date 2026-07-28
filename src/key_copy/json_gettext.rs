@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+#[cfg(feature = "regex")]
 use regex::Regex;
 
 use super::{Context, JSONGetTextBuilder, Key};
@@ -151,6 +152,7 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Get filtered text from context by a Regex instance. The output map is usually used for serialization.
+    #[cfg(feature = "regex")]
     pub fn get_filtered_text(
         &'a self,
         regex: &Regex,
@@ -170,6 +172,7 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Get filtered text from context with a specific key by a Regex instance. The output map is usually used for serialization.
+    #[cfg(feature = "regex")]
     pub fn get_filtered_text_with_key(
         &'a self,
         key: Key,
