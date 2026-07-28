@@ -119,6 +119,7 @@ pub extern crate manifest_dir_macros;
 
 mod json_get_text_build_errors;
 mod macros;
+mod text_lookup;
 mod value;
 
 #[cfg(all(debug_assertions, feature = "rocket"))]

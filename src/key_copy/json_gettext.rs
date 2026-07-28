@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 #[cfg(feature = "regex")]
 use regex::Regex;
 
 use super::{Context, JSONGetTextBuilder, Key};
-use crate::{JSONGetTextBuildError, JSONGetTextValue};
+use crate::{JSONGetTextBuildError, JSONGetTextValue, text_lookup};
 
 /// A wrapper for context and a default key. **Keys** are usually considered as locales.
 #[derive(Debug)]
@@ -23,46 +23,13 @@ impl<'a> JSONGetText<'a> {
     /// Create a new JSONGetText instance with context and a default key.
     pub(crate) fn from_context_with_default_key(
         default_key: Key,
-        mut context: Context<'a>,
+        context: Context<'a>,
     ) -> Result<JSONGetText<'a>, JSONGetTextBuildError> {
-        if !context.contains_key(&default_key) {
-            return Err(JSONGetTextBuildError::DefaultKeyNotFound);
-        }
-
-        let default_map = context.remove(&default_key).unwrap();
-
-        let mut inner_context = HashMap::new();
-
-        {
-            for (key, mut map) in context {
-                {
-                    for map_key in map.keys() {
-                        if !default_map.contains_key(map_key) {
-                            return Err(JSONGetTextBuildError::TextInKeyNotInDefaultKey {
-                                key,
-                                text: map_key.clone(),
-                            });
-                        }
-                    }
-                }
-
-                {
-                    for map_key in default_map.keys() {
-                        if !map.contains_key(map_key) {
-                            map.insert(map_key.clone(), default_map.get(map_key).unwrap().clone());
-                        }
-                    }
-                }
-
-                inner_context.insert(key, map);
-            }
-
-            inner_context.insert(default_key, default_map);
-        }
+        let context = text_lookup::finalize_context(default_key, context)?;
 
         Ok(JSONGetText {
             default_key,
-            context: inner_context,
+            context,
         })
     }
 
@@ -94,102 +61,65 @@ impl<'a> JSONGetText<'a> {
 
     /// Get text from context.
     #[inline]
-    pub fn get_text<T: AsRef<str>>(&'a self, text: T) -> Option<JSONGetTextValue<'a>> {
+    pub fn get_text<T: AsRef<str>>(&self, text: T) -> Option<JSONGetTextValue<'_>> {
         let map = self.context.get(&self.default_key).unwrap();
 
-        map.get(text.as_ref()).map(|v| v.clone_borrowed())
+        text_lookup::get_text(map, text.as_ref())
     }
 
     /// Get text from context with a specific key.
     #[inline]
     pub fn get_text_with_key<T: AsRef<str>>(
-        &'a self,
+        &self,
         key: Key,
         text: T,
-    ) -> Option<JSONGetTextValue<'a>> {
+    ) -> Option<JSONGetTextValue<'_>> {
         let map =
             self.context.get(&key).unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
 
-        map.get(text.as_ref()).map(|v| v.clone_borrowed())
+        text_lookup::get_text(map, text.as_ref())
     }
 
     /// Get multiple text from context. The output map is usually used for serialization.
     pub fn get_multiple_text<'b, T: AsRef<str> + ?Sized>(
         &self,
         text_array: &[&'b T],
-    ) -> Option<HashMap<&'b str, JSONGetTextValue<'_>>> {
+    ) -> Option<BTreeMap<&'b str, JSONGetTextValue<'_>>> {
         let map = self.context.get(&self.default_key).unwrap();
 
-        let mut new_map = HashMap::new();
-
-        for &text in text_array.iter() {
-            let text = text.as_ref();
-            let value = map.get(text)?;
-            new_map.insert(text, value.clone_borrowed());
-        }
-
-        Some(new_map)
+        text_lookup::get_multiple_text(map, text_array)
     }
 
     /// Get multiple text from context with a specific key. The output map is usually used for serialization.
     pub fn get_multiple_text_with_key<'b, T: AsRef<str> + ?Sized>(
-        &'a self,
+        &self,
         key: Key,
         text_array: &[&'b T],
-    ) -> Option<HashMap<&'b str, JSONGetTextValue<'a>>> {
+    ) -> Option<BTreeMap<&'b str, JSONGetTextValue<'_>>> {
         let map =
             self.context.get(&key).unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
 
-        let mut new_map = HashMap::new();
-
-        for &text in text_array.iter() {
-            let text = text.as_ref();
-            let value = map.get(text)?;
-            new_map.insert(text, value.clone_borrowed());
-        }
-
-        Some(new_map)
+        text_lookup::get_multiple_text(map, text_array)
     }
 
     /// Get filtered text from context by a Regex instance. The output map is usually used for serialization.
     #[cfg(feature = "regex")]
-    pub fn get_filtered_text(
-        &'a self,
-        regex: &Regex,
-    ) -> Option<HashMap<&'a str, JSONGetTextValue<'a>>> {
+    pub fn get_filtered_text(&self, regex: &Regex) -> Option<BTreeMap<&str, JSONGetTextValue<'_>>> {
         let map = self.context.get(&self.default_key).unwrap();
 
-        let mut new_map = HashMap::new();
-
-        for (key, value) in map.iter() {
-            if !regex.is_match(key) {
-                continue;
-            }
-            new_map.insert(key.as_str(), value.clone_borrowed());
-        }
-
-        Some(new_map)
+        Some(text_lookup::get_filtered_text(map, regex))
     }
 
     /// Get filtered text from context with a specific key by a Regex instance. The output map is usually used for serialization.
     #[cfg(feature = "regex")]
     pub fn get_filtered_text_with_key(
-        &'a self,
+        &self,
         key: Key,
         regex: &Regex,
-    ) -> Option<HashMap<&'a str, JSONGetTextValue<'a>>> {
+    ) -> Option<BTreeMap<&str, JSONGetTextValue<'_>>> {
         let map =
             self.context.get(&key).unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
 
-        let mut new_map = HashMap::new();
-
-        for (key, value) in map.iter() {
-            if !regex.is_match(key) {
-                continue;
-            }
-            new_map.insert(key.as_str(), value.clone_borrowed());
-        }
-
-        Some(new_map)
+        Some(text_lookup::get_filtered_text(map, regex))
     }
 }

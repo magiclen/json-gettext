@@ -63,15 +63,7 @@ macro_rules! get_text {
     };
     ( $ctx:expr, $key:expr, $text:expr, $($text_array:expr), + ) => {
         {
-            let mut text_array = vec![$text];
-
-            $(
-                {
-                    text_array.push($text_array);
-                }
-            )*
-
-            $ctx.get_multiple_text_with_key($key, &text_array)
+            $ctx.get_multiple_text_with_key($key, &[$text, $($text_array),+])
         }
     };
 }
