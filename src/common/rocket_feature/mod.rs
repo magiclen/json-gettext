@@ -1,10 +1,10 @@
 #[cfg(debug_assertions)]
-mod debug;
+mod reloadable;
 
 #[cfg(not(debug_assertions))]
-mod release;
+mod embedded;
 
+#[cfg(not(debug_assertions))]
+pub use embedded::*;
 #[cfg(debug_assertions)]
-pub use debug::*;
-#[cfg(not(debug_assertions))]
-pub use release::*;
+pub use reloadable::*;

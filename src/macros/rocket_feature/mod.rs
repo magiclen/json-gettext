@@ -1,5 +1,5 @@
 #[cfg(debug_assertions)]
-mod debug;
+mod reloadable;
 
 #[cfg(not(debug_assertions))]
-mod release;
+mod embedded;
