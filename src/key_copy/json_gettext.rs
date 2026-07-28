@@ -50,7 +50,7 @@ impl<'a> JSONGetText<'a> {
         self.default_key
     }
 
-    /// Get a string map from context by a key.
+    /// Get the texts owned by a key. Missing texts are **not** filled in from the default key; the default key's map is returned only when the key itself is absent.
     #[inline]
     pub fn get(&self, key: Key) -> &HashMap<String, JSONGetTextValue<'a>> {
         match self.context.get(&key) {
@@ -64,20 +64,20 @@ impl<'a> JSONGetText<'a> {
     pub fn get_text<T: AsRef<str>>(&self, text: T) -> Option<JSONGetTextValue<'_>> {
         let map = self.context.get(&self.default_key).unwrap();
 
-        text_lookup::get_text(map, text.as_ref())
+        text_lookup::get_text(map, map, text.as_ref())
     }
 
-    /// Get text from context with a specific key.
+    /// Get text from context with a specific key, falling back to the default key when the text is missing.
     #[inline]
     pub fn get_text_with_key<T: AsRef<str>>(
         &self,
         key: Key,
         text: T,
     ) -> Option<JSONGetTextValue<'_>> {
-        let map =
-            self.context.get(&key).unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
+        let default_map = self.context.get(&self.default_key).unwrap();
+        let map = self.context.get(&key).unwrap_or(default_map);
 
-        text_lookup::get_text(map, text.as_ref())
+        text_lookup::get_text(map, default_map, text.as_ref())
     }
 
     /// Get multiple text from context. The output map is usually used for serialization.
@@ -87,19 +87,19 @@ impl<'a> JSONGetText<'a> {
     ) -> Option<BTreeMap<&'b str, JSONGetTextValue<'_>>> {
         let map = self.context.get(&self.default_key).unwrap();
 
-        text_lookup::get_multiple_text(map, text_array)
+        text_lookup::get_multiple_text(map, map, text_array)
     }
 
-    /// Get multiple text from context with a specific key. The output map is usually used for serialization.
+    /// Get multiple text from context with a specific key, falling back to the default key per text. The output map is usually used for serialization.
     pub fn get_multiple_text_with_key<'b, T: AsRef<str> + ?Sized>(
         &self,
         key: Key,
         text_array: &[&'b T],
     ) -> Option<BTreeMap<&'b str, JSONGetTextValue<'_>>> {
-        let map =
-            self.context.get(&key).unwrap_or_else(|| self.context.get(&self.default_key).unwrap());
+        let default_map = self.context.get(&self.default_key).unwrap();
+        let map = self.context.get(&key).unwrap_or(default_map);
 
-        text_lookup::get_multiple_text(map, text_array)
+        text_lookup::get_multiple_text(map, default_map, text_array)
     }
 
     /// Get filtered text from context by a Regex instance. The output map is usually used for serialization.
@@ -110,7 +110,7 @@ impl<'a> JSONGetText<'a> {
         Some(text_lookup::get_filtered_text(map, regex))
     }
 
-    /// Get filtered text from context with a specific key by a Regex instance. The output map is usually used for serialization.
+    /// Get filtered text owned by a specific key by a Regex instance. Texts are not filled in from the default key. The output map is usually used for serialization.
     #[cfg(feature = "regex")]
     pub fn get_filtered_text_with_key(
         &self,

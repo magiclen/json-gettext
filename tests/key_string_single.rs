@@ -34,13 +34,15 @@ fn map_get() {
     assert_eq!("Hello, world!", map.get("hello").unwrap());
     assert_eq!("Rust!", map.get("rust").unwrap());
 
+    // An absent key falls back to the default key's map.
     let map = ctx.get("de");
 
     assert_eq!("Hello, world!", map.get("hello").unwrap());
     assert_eq!("Rust!", map.get("rust").unwrap());
 
+    // `get` returns only the texts the key actually owns; `rust` is not filled in from the default key.
     let map = ctx.get("zh_TW");
 
     assert_eq!("哈囉，世界！", map.get("hello").unwrap());
-    assert_eq!("Rust!", map.get("rust").unwrap());
+    assert!(map.get("rust").is_none());
 }
