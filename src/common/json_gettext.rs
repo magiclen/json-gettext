@@ -122,6 +122,7 @@ impl<'a> JSONGetText<'a> {
     }
 
     /// Get filtered text owned by a specific key by a Regex instance. Texts are not filled in from the default key. The output map is usually used for serialization.
+    /// If the key itself is absent, the default key's map is used.
     #[cfg(feature = "regex")]
     pub fn get_filtered_text_with_key<K: LookupKey>(
         &self,
@@ -137,5 +138,22 @@ impl<'a> JSONGetText<'a> {
     #[inline]
     fn default_map(&self) -> &HashMap<String, JSONGetTextValue<'a>> {
         self.context.get(&self.default_key).unwrap()
+    }
+
+    /// Compare each text's JSON output, including the order of fields inside objects.
+    #[cfg(all(debug_assertions, feature = "rocket"))]
+    pub(super) fn has_same_texts(&self, other: &Self) -> bool {
+        self.default_key == other.default_key
+            && self.context.len() == other.context.len()
+            && self.context.iter().all(|(key, texts)| {
+                other.context.get(key).is_some_and(|other_texts| {
+                    texts.len() == other_texts.len()
+                        && texts.iter().all(|(text, value)| {
+                            other_texts.get(text).is_some_and(|other_value| {
+                                value.to_json_string() == other_value.to_json_string()
+                            })
+                        })
+                })
+            })
     }
 }

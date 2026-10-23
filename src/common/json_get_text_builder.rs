@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::File, path::Path};
+use std::{collections::HashMap, fs, path::Path};
 
 use serde::Serialize;
 use serde_json::{Map, Value};
@@ -91,9 +91,7 @@ impl<'a> JSONGetTextBuilder<'a> {
             return Err(JSONGetTextBuildError::DuplicatedKey(key));
         }
 
-        let path = path.as_ref();
-
-        let value: Map<String, Value> = serde_json::from_reader(File::open(path)?)?;
+        let value: Map<String, Value> = serde_json::from_slice(&fs::read(path)?)?;
 
         let mut map: HashMap<String, JSONGetTextValue<'static>> =
             HashMap::with_capacity(value.len());

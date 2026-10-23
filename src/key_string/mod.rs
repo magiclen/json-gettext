@@ -104,6 +104,7 @@ impl<S: Into<String>> IntoKey for S {
 
 /**
 Create a literal key.
+The input string is copied as it is, without formatting.
 
 ```rust
 use json_gettext::{key, Key};
@@ -116,6 +117,6 @@ assert_eq!(Key(String::from("en_US")), key);
 #[macro_export]
 macro_rules! key {
     ($key:expr) => {
-        $crate::Key(format!($key))
+        $crate::Key(::std::string::String::from($key))
     };
 }

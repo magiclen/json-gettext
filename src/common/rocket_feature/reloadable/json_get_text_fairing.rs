@@ -29,9 +29,14 @@ impl Fairing for JSONGetTextFairing {
     async fn on_ignite(&self, rocket: Rocket<Build>) -> Result<Rocket<Build>, Rocket<Build>> {
         let (default_key, source) = (self.custom_callback)();
 
-        let state = JSONGetTextManager::from_files(default_key, source).unwrap();
+        match JSONGetTextManager::from_files(default_key, source) {
+            Ok(state) => Ok(rocket.manage(state)),
+            Err(error) => {
+                rocket::error!("Failed to load JSONGetText: {error}");
 
-        Ok(rocket.manage(state))
+                Err(rocket)
+            },
+        }
     }
 
     #[inline]
@@ -39,8 +44,10 @@ impl Fairing for JSONGetTextFairing {
         let ctx = req
             .rocket()
             .state::<JSONGetTextManager>()
-            .expect("JSONGetTextManager registered in on_attach");
+            .expect("JSONGetTextManager registered in on_ignite");
 
-        ctx.reload_if_needed().unwrap();
+        if let Err(error) = ctx.reload_if_needed() {
+            rocket::error!("Failed to reload JSONGetText: {error}");
+        }
     }
 }

@@ -33,6 +33,8 @@ jobs:
       - run: cargo clippy --all-targets --features locale --features rocket -- -D warnings
       - run: cargo clippy --all-targets --features language --features rocket -- -D warnings
       - run: cargo clippy --all-targets --features region --features rocket -- -D warnings
+      - run: cargo clippy --all-targets --release --features rocket -- -D warnings
+      - run: cargo clippy --all-targets --release --features locale --features rocket -- -D warnings
 
   tests:
     strategy:
@@ -52,6 +54,7 @@ jobs:
           - --features locale --features regex
           - --features language
           - --features region
+          - --features rocket
           - --features locale --features rocket
           - --features language --features rocket
           - --features region --features rocket
@@ -64,6 +67,22 @@ jobs:
           toolchain: ${{ matrix.toolchain }}
       - run: cargo test ${{ matrix.features }}
       - run: cargo doc ${{ matrix.features }}
+
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        features:
+          - --features rocket --features regex
+          - --features locale --features rocket --features regex
+    name: Test release (${{ matrix.features }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+      - run: cargo test --release ${{ matrix.features }}
 
   MSRV:
     strategy:
@@ -82,6 +101,7 @@ jobs:
           - --features locale --features regex
           - --features language
           - --features region
+          - --features rocket
           - --features locale --features rocket
           - --features language --features rocket
           - --features region --features rocket

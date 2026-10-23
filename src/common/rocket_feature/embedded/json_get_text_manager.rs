@@ -4,12 +4,14 @@ use rocket::fairing::Fairing;
 
 use crate::{JSONGetText, JSONGetTextBuildError, JSONGetTextBuilder, JSONGetTextFairing};
 
+/// Holds a `JSONGetText` built from JSON embedded in the binary.
 #[derive(Debug)]
 pub struct JSONGetTextManager {
     json_gettext: JSONGetText<'static>,
 }
 
 impl JSONGetTextManager {
+    /// Build the manager from embedded JSON strings.
     #[inline]
     pub fn from_jsons(
         default_key: crate::Key,

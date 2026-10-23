@@ -1,0 +1,11 @@
+{
+  "plain": "Hello",
+  "escaped": "Line\nbreak",
+  "boolean": true,
+  "negative": -42,
+  "unsigned": 18446744073709551615,
+  "float": 1.25,
+  "array": [true, 42, null, {"nested": "value"}],
+  "object": {"nested": [1, null]},
+  "null": null
+}

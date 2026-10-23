@@ -27,6 +27,7 @@ jobs:
           - --features locale --features regex
           - --features language
           - --features region
+          - --features rocket
           - --features locale --features rocket
           - --features language --features rocket
           - --features region --features rocket
@@ -57,6 +58,7 @@ jobs:
           - --features locale --features regex
           - --features language
           - --features region
+          - --features rocket
           - --features locale --features rocket
           - --features language --features rocket
           - --features region --features rocket

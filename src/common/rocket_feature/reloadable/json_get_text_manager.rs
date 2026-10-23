@@ -1,27 +1,39 @@
 use std::{
     collections::HashMap,
-    mem,
+    fmt::{self, Debug, Formatter},
     ops::Deref,
     path::{Path, PathBuf},
-    sync::atomic::{AtomicBool, Ordering},
+    sync::{
+        Arc, Mutex, TryLockError,
+        atomic::{AtomicPtr, Ordering},
+    },
     time::SystemTime,
 };
 
 use rocket::fairing::Fairing;
 
-use crate::{
-    DebuggableMutate, JSONGetText, JSONGetTextBuildError, JSONGetTextBuilder, JSONGetTextFairing,
-};
+use crate::{JSONGetText, JSONGetTextBuildError, JSONGetTextBuilder, JSONGetTextFairing};
 
-#[derive(Debug)]
+/// Holds a `JSONGetText` and reloads it from the JSON files when they change.
+/// Keeps each published snapshot alive until the manager is dropped, so borrowed texts stay valid after a reload.
 pub struct JSONGetTextManager {
-    empty:        JSONGetText<'static>,
-    json_gettext: DebuggableMutate<JSONGetText<'static>>,
-    files:        DebuggableMutate<HashMap<crate::Key, (PathBuf, Option<SystemTime>)>>,
-    reloading:    AtomicBool,
+    json_gettext: AtomicPtr<JSONGetText<'static>>,
+    reload_state: Mutex<ReloadState>,
+}
+
+struct ReloadState {
+    snapshots: Vec<Arc<JSONGetText<'static>>>,
+    files:     HashMap<crate::Key, SourceFile>,
+}
+
+struct SourceFile {
+    path:          PathBuf,
+    modified:      Option<SystemTime>,
+    next_modified: Option<SystemTime>,
 }
 
 impl JSONGetTextManager {
+    /// Load the JSON files and remember their modification times.
     pub fn from_files(
         default_key: crate::Key,
         source: Vec<(crate::Key, &'static str)>,
@@ -29,84 +41,79 @@ impl JSONGetTextManager {
         let mut files = HashMap::with_capacity(source.len());
 
         for (key, json_file) in source {
+            if files.contains_key(&key) {
+                return Err(JSONGetTextBuildError::DuplicatedKey(key));
+            }
+
             let metadata = Path::new(json_file).metadata()?;
 
-            let mtime = metadata.modified().ok();
+            let modified = metadata.modified().ok();
 
-            files.insert(key, (PathBuf::from(json_file), mtime));
+            files.insert(key, SourceFile {
+                path: PathBuf::from(json_file),
+                modified,
+                next_modified: modified,
+            });
         }
 
         let mut builder = JSONGetTextBuilder::new(default_key);
 
-        for (key, (path, _)) in &files {
-            builder.add_json_file(key, path)?;
+        for (key, file) in &files {
+            builder.add_json_file(key, &file.path)?;
+        }
+
+        let json_gettext = Arc::new(builder.build()?);
+        let pointer = Arc::as_ptr(&json_gettext).cast_mut();
+
+        Ok(JSONGetTextManager {
+            json_gettext: AtomicPtr::new(pointer),
+            reload_state: Mutex::new(ReloadState {
+                snapshots: vec![json_gettext],
+                files,
+            }),
+        })
+    }
+
+    /// Reload all JSON files if any modification time has changed.
+    /// If another reload is running, this returns `Ok(())` without waiting.
+    /// On error, the previous texts are kept and the next call tries again.
+    pub fn reload_if_needed(&self) -> Result<(), JSONGetTextBuildError> {
+        let mut state = match self.reload_state.try_lock() {
+            Ok(state) => state,
+            Err(TryLockError::WouldBlock) => return Ok(()),
+            Err(TryLockError::Poisoned(error)) => error.into_inner(),
+        };
+        let mut do_reload = false;
+
+        for file in state.files.values_mut() {
+            file.next_modified = file.path.metadata()?.modified().ok();
+            do_reload |= file.next_modified.is_none() || file.next_modified != file.modified;
+        }
+
+        if !do_reload {
+            return Ok(());
+        }
+
+        let mut builder = JSONGetTextBuilder::new(self.get_default_key());
+
+        for (key, file) in &state.files {
+            builder.add_json_file(key, &file.path)?;
         }
 
         let json_gettext = builder.build()?;
 
-        // Reuse the built default key so the empty context does not need another copy of it.
-        let mut empty_builder = JSONGetTextBuilder::new(json_gettext.get_default_key());
+        // Snapshots are never freed, so skip publishing when only modification times changed (e.g. `touch`).
+        if !self.has_same_texts(&json_gettext) {
+            let snapshot = Arc::new(json_gettext);
+            let pointer = Arc::as_ptr(&snapshot).cast_mut();
 
-        empty_builder.add_map(json_gettext.get_default_key(), HashMap::new())?;
+            // Keep ownership before publishing; old snapshots must never be removed or changed.
+            state.snapshots.push(snapshot);
+            self.json_gettext.store(pointer, Ordering::Release);
+        }
 
-        Ok(JSONGetTextManager {
-            empty:        empty_builder.build()?,
-            json_gettext: DebuggableMutate::new(json_gettext),
-            files:        DebuggableMutate::new(files),
-            reloading:    AtomicBool::new(false),
-        })
-    }
-
-    pub fn reload_if_needed(&self) -> Result<(), JSONGetTextBuildError> {
-        if self
-            .reloading
-            .compare_exchange(false, true, Ordering::Relaxed, Ordering::Relaxed)
-            .is_ok()
-        {
-            let mut do_reload = false;
-
-            let files = self.files.get_mut();
-
-            for (path, mtime) in files.values_mut() {
-                let metadata = path.metadata().inspect_err(|_| {
-                    self.reloading.store(false, Ordering::Relaxed);
-                })?;
-
-                let (reload, new_mtime) = match mtime {
-                    Some(mtime) => match metadata.modified() {
-                        Ok(new_mtime) => (new_mtime > *mtime, Some(new_mtime)),
-                        Err(_) => (true, None),
-                    },
-                    None => match metadata.modified() {
-                        Ok(new_mtime) => (true, Some(new_mtime)),
-                        Err(_) => (true, None),
-                    },
-                };
-
-                if reload {
-                    *mtime = new_mtime;
-
-                    do_reload = true;
-                }
-            }
-
-            if do_reload {
-                let mut builder = JSONGetTextBuilder::new(self.get_default_key());
-
-                for (key, (path, _)) in files.iter() {
-                    builder.add_json_file(key, path).inspect_err(|_| {
-                        self.reloading.store(false, Ordering::Relaxed);
-                    })?;
-                }
-
-                let json_gettext = builder.build().inspect_err(|_| {
-                    self.reloading.store(false, Ordering::Relaxed);
-                })?;
-
-                drop(mem::replace(self.json_gettext.get_mut(), json_gettext));
-            }
-
-            self.reloading.store(false, Ordering::Relaxed);
+        for file in state.files.values_mut() {
+            file.modified = file.next_modified;
         }
 
         Ok(())
@@ -129,7 +136,17 @@ impl Deref for JSONGetTextManager {
 
     #[inline]
     fn deref(&self) -> &JSONGetText<'static> {
-        // NOTICE: This is only sound enough for debug-time hot-reloading, not a production concurrency guarantee. A reader here can still race with the reloader; the empty context is returned while reloading to reduce the window.
-        if self.reloading.load(Ordering::Relaxed) { &self.empty } else { self.json_gettext.get() }
+        let pointer = self.json_gettext.load(Ordering::Acquire);
+
+        // SAFETY: Acquire sees a complete, immutable snapshot that reload_state keeps alive until this manager is dropped.
+        unsafe { &*pointer }
+    }
+}
+
+impl Debug for JSONGetTextManager {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("JSONGetTextManager")
+            .field("json_gettext", self.deref())
+            .finish_non_exhaustive()
     }
 }

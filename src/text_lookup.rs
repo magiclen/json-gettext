@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, HashMap};
 #[cfg(feature = "regex")]
 use regex::Regex;
 
-use crate::{Context, JSONGetTextBuildError, JSONGetTextValue, Key};
+use crate::{Context, IntoKey, JSONGetTextBuildError, JSONGetTextValue, Key};
 
 /// A map from a text name to its value within a single key (locale).
 type TextMap<'a> = HashMap<String, JSONGetTextValue<'a>>;
@@ -22,28 +22,24 @@ pub(crate) fn finalize_context<'a>(
         None => return Err(JSONGetTextBuildError::DefaultKeyNotFound),
     };
 
-    let mut inner_context = HashMap::with_capacity(context.len() + 1);
-
-    for (key, mut map) in context {
+    for (key, map) in &mut context {
         if allow_extra_texts {
             map.retain(|text, _| default_map.contains_key(text));
         } else {
             for map_key in map.keys() {
                 if !default_map.contains_key(map_key) {
                     return Err(JSONGetTextBuildError::TextInKeyNotInDefaultKey {
-                        key,
+                        key:  key.into_key(),
                         text: map_key.clone(),
                     });
                 }
             }
         }
-
-        inner_context.insert(key, map);
     }
 
-    inner_context.insert(default_key, default_map);
+    context.insert(default_key, default_map);
 
-    Ok(inner_context)
+    Ok(context)
 }
 
 /// Look up a single text, falling back to the default key's map when the text is missing.

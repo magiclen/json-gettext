@@ -38,7 +38,10 @@ The `get_text!` macro is a shortcut with three forms: `get_text!(ctx, text)`, `g
 
 ### Key Backends (mutually exclusive)
 
-By default a key is an arbitrary `String`, matched by exact string comparison. If your keys are locale tags, you can enable one of the features below to store keys as fixed-size `Copy` values from the [`unic-langid`](https://crates.io/crates/unic-langid) crate. This makes key comparison faster and normalizes the tag format, so `en-US` and `en_US` become the same key.
+By default a key is an arbitrary `String`, matched by exact string comparison.
+If your keys are locale tags, you can enable one of the features below to store keys as fixed-size `Copy` values from the [`unic-langid`](https://crates.io/crates/unic-langid) crate.
+This makes key comparison faster and normalizes the tag format.
+With the `locale` feature, `en-US` and `en_US` become the same key.
 
 | Feature | `Key` type | Example tag | Use when |
 |---------|------------|-------------|----------|
@@ -49,7 +52,8 @@ By default a key is an arbitrary `String`, matched by exact string comparison. I
 
 These three features each redefine `Key`, so **at most one** may be enabled. Enabling more than one, or enabling the internal `langid` feature on its own, fails to compile with a message telling you what to do.
 
-When a langid backend is enabled, use the `key!` macro to build a `Key` from a string literal at compile time:
+When a langid backend is enabled, use the `key!` macro to build a `Key` from a string literal at compile time.
+This example requires the `locale` feature:
 
 ```rust,ignore
 use json_gettext::{key, Key};
@@ -57,9 +61,16 @@ use json_gettext::{key, Key};
 let key: Key = key!("en_US");
 ```
 
+With `language`, use a language such as `key!("en")`.
+With `region`, use a region such as `key!("US")`.
+
+With the default string backend, `key!` accepts any string expression and uses it as is.
+
 ### `regex`
 
-Enables `get_filtered_text` and `get_filtered_text_with_key`, which return every text whose **name** matches a [`Regex`](https://crates.io/crates/regex). These methods do not fall back to the default key.
+Enables `get_filtered_text` and `get_filtered_text_with_key`, which return every text whose **name** matches a [`Regex`](https://crates.io/crates/regex).
+An existing key's missing texts are not filled in from the default key.
+When the requested key itself is absent, `get_filtered_text_with_key` uses the default key's map.
 
 ### `rocket`
 
@@ -76,6 +87,11 @@ features = ["rocket"]
 ```
 
 In debug builds the manager watches the JSON files and reloads them when they change, so translations can be edited without recompiling. In release builds the JSON is embedded into the binary and is never reloaded.
+
+In debug builds, each published snapshot stays alive until the manager is dropped, so existing borrowed texts remain valid after a reload.
+Memory use grows with successful reloads.
+Unchanged content does not add another snapshot.
+A failed reload logs an error and keeps the last working content.
 
 ```rust,ignore
 #[macro_use]
@@ -110,6 +126,7 @@ fn rocket() -> _ {
 ### Rocket with a langid backend
 
 With a langid backend, pass `Key` values (built with `key!`) instead of strings.
+The example below requires `rocket` and `locale`; the `language` and `region` backends use `Key(language)` and `Key(region)` instead.
 
 ```rust,ignore
 #[macro_use]
@@ -185,9 +202,6 @@ mod macros;
 mod text_lookup;
 mod value;
 
-#[cfg(all(debug_assertions, feature = "rocket"))]
-mod mutate;
-
 #[cfg(feature = "langid")]
 mod key_copy;
 
@@ -200,8 +214,6 @@ pub use json_get_text_build_errors::*;
 pub use key_copy::*;
 #[cfg(not(feature = "langid"))]
 pub use key_string::*;
-#[cfg(all(debug_assertions, feature = "rocket"))]
-use mutate::DebuggableMutate;
 #[cfg(feature = "locale")]
 pub use unic_langid::LanguageIdentifierError;
 #[cfg(any(feature = "language", feature = "region"))]

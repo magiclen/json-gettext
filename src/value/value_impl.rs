@@ -54,22 +54,22 @@ impl<'a> JSONGetTextValue<'a> {
 
     #[inline]
     pub fn from_i8(n: i8) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(to_value(n).unwrap())
+        JSONGetTextValue::JSONValue(Value::from(n))
     }
 
     #[inline]
     pub fn from_i16(n: i16) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(to_value(n).unwrap())
+        JSONGetTextValue::JSONValue(Value::from(n))
     }
 
     #[inline]
     pub fn from_i32(n: i32) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(to_value(n).unwrap())
+        JSONGetTextValue::JSONValue(Value::from(n))
     }
 
     #[inline]
     pub fn from_i64(n: i64) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(to_value(n).unwrap())
+        JSONGetTextValue::JSONValue(Value::from(n))
     }
 
     #[inline]
@@ -81,27 +81,27 @@ impl<'a> JSONGetTextValue<'a> {
 
     #[inline]
     pub fn from_isize(n: isize) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(to_value(n).unwrap())
+        JSONGetTextValue::JSONValue(Value::from(n))
     }
 
     #[inline]
     pub fn from_u8(n: u8) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(to_value(n).unwrap())
+        JSONGetTextValue::JSONValue(Value::from(n))
     }
 
     #[inline]
     pub fn from_u16(n: u16) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(to_value(n).unwrap())
+        JSONGetTextValue::JSONValue(Value::from(n))
     }
 
     #[inline]
     pub fn from_u32(n: u32) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(to_value(n).unwrap())
+        JSONGetTextValue::JSONValue(Value::from(n))
     }
 
     #[inline]
     pub fn from_u64(n: u64) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(to_value(n).unwrap())
+        JSONGetTextValue::JSONValue(Value::from(n))
     }
 
     #[inline]
@@ -113,17 +113,17 @@ impl<'a> JSONGetTextValue<'a> {
 
     #[inline]
     pub fn from_usize(n: usize) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(to_value(n).unwrap())
+        JSONGetTextValue::JSONValue(Value::from(n))
     }
 
     #[inline]
     pub fn from_f32(n: f32) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(to_value(n).unwrap())
+        JSONGetTextValue::JSONValue(Value::from(n))
     }
 
     #[inline]
     pub fn from_f64(n: f64) -> JSONGetTextValue<'static> {
-        JSONGetTextValue::JSONValue(to_value(n).unwrap())
+        JSONGetTextValue::JSONValue(Value::from(n))
     }
 
     #[inline]
@@ -526,6 +526,13 @@ impl<'de> Visitor<'de> for JSONGetTextValueVisitor {
     }
 
     #[inline]
+    fn visit_unit<E>(self) -> Result<JSONGetTextValue<'static>, E>
+    where
+        E: DeError, {
+        Ok(JSONGetTextValue::null())
+    }
+
+    #[inline]
     fn visit_seq<A>(self, mut seq: A) -> Result<JSONGetTextValue<'static>, A::Error>
     where
         A: SeqAccess<'de>, {
@@ -563,7 +570,7 @@ impl<'de> Deserialize<'de> for JSONGetTextValue<'de> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>, {
-        deserializer.deserialize_str(JSONGetTextValueVisitor)
+        deserializer.deserialize_any(JSONGetTextValueVisitor)
     }
 }
 

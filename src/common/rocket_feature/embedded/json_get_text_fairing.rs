@@ -27,8 +27,13 @@ impl Fairing for JSONGetTextFairing {
     async fn on_ignite(&self, rocket: Rocket<Build>) -> Result<Rocket<Build>, Rocket<Build>> {
         let (default_key, source) = (self.custom_callback)();
 
-        let state = JSONGetTextManager::from_jsons(default_key, source).unwrap();
+        match JSONGetTextManager::from_jsons(default_key, source) {
+            Ok(state) => Ok(rocket.manage(state)),
+            Err(error) => {
+                rocket::error!("Failed to load JSONGetText: {error}");
 
-        Ok(rocket.manage(state))
+                Err(rocket)
+            },
+        }
     }
 }
